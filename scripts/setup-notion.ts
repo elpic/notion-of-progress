@@ -2,7 +2,7 @@
  * npm run setup
  *
  * Creates the Notion workspace for Notion of Progress:
- *   1. Creates a "Notion of Progress" parent page (workspace level)
+ *   1. Asks for a Notion page URL to use as the parent
  *   2. Creates the Task DB under it
  *   3. Creates the Standup Log DB under it
  *   4. Writes the DB IDs back into .env automatically
@@ -11,12 +11,19 @@
  * it skips creation and just validates the existing databases.
  *
  * Only NOTION_API_KEY is required to run this script.
+ *
+ * Before running:
+ *   1. Create an integration at https://www.notion.com/my-integrations
+ *   2. Create an empty page in Notion (e.g. "Notion of Progress")
+ *   3. Open that page → click ··· → Connections → connect your integration
+ *   4. Copy the page URL and paste it when prompted
  */
 
 import 'dotenv/config';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createInterface } from 'readline';
 import { Client } from '@notionhq/client';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -26,20 +33,37 @@ const ENV_PATH = join(ROOT, '.env');
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 
 if (!NOTION_API_KEY) {
-  console.error('ERROR: NOTION_API_KEY is not set. Add it to your .env file first.');
+  console.error('\nERROR: NOTION_API_KEY is not set. Add it to your .env file first.\n');
   process.exit(1);
 }
 
 const notion = new Client({ auth: NOTION_API_KEY });
 
-function log(msg: string) {
-  console.log(`  ${msg}`);
+function prompt(question: string): Promise<string> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+function extractPageId(input: string): string {
+  // Handle full Notion URLs: https://www.notion.so/Page-Title-abc123def456
+  // or bare UUIDs: abc123de-f456-...
+  const urlMatch = input.match(/([a-f0-9]{32})(?:\?|$)/i) || input.match(/([a-f0-9-]{36})(?:\?|$)/i);
+  if (urlMatch) return urlMatch[1].replace(/-/g, '');
+  // Try stripping dashes from bare UUID
+  const bare = input.replace(/-/g, '');
+  if (/^[a-f0-9]{32}$/i.test(bare)) return bare;
+  throw new Error(`Could not extract a page ID from: "${input}"`);
 }
 
 function updateEnv(key: string, value: string): void {
   let content = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, 'utf8') : '';
   const line = `${key}=${value}`;
-  const regex = new RegExp(`^${key}=.*`, 'm');
+  const regex = new RegExp(`^#?\\s*${key}=.*`, 'm');
 
   if (regex.test(content)) {
     content = content.replace(regex, line);
@@ -50,22 +74,8 @@ function updateEnv(key: string, value: string): void {
   writeFileSync(ENV_PATH, content, 'utf8');
 }
 
-async function createParentPage(): Promise<string> {
-  log('Creating "Notion of Progress" workspace page...');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response = await (notion.pages.create as any)({
-    parent: { workspace: true },
-    icon: { type: 'emoji', emoji: '📋' },
-    properties: {
-      title: { title: [{ type: 'text', text: { content: 'Notion of Progress' } }] },
-    },
-  });
-  log(`  Created: https://www.notion.so/${response.id.replace(/-/g, '')}`);
-  return response.id;
-}
-
 async function createTaskDB(parentPageId: string): Promise<string> {
-  log('Creating Task DB...');
+  console.log('  Creating Task DB...');
   const response = await notion.databases.create({
     parent: { type: 'page_id', page_id: parentPageId },
     title: [{ type: 'text', text: { content: 'Task DB' } }],
@@ -94,12 +104,12 @@ async function createTaskDB(parentPageId: string): Promise<string> {
       Notes: { rich_text: {} },
     },
   });
-  log(`  Created: https://www.notion.so/${response.id.replace(/-/g, '')}`);
+  console.log(`  Task DB created ✓`);
   return response.id;
 }
 
 async function createStandupLogDB(parentPageId: string): Promise<string> {
-  log('Creating Standup Log DB...');
+  console.log('  Creating Standup Log DB...');
   const response = await notion.databases.create({
     parent: { type: 'page_id', page_id: parentPageId },
     title: [{ type: 'text', text: { content: 'Standup Log' } }],
@@ -118,7 +128,7 @@ async function createStandupLogDB(parentPageId: string): Promise<string> {
       'Tasks Reviewed': { number: { format: 'number' } },
     },
   });
-  log(`  Created: https://www.notion.so/${response.id.replace(/-/g, '')}`);
+  console.log(`  Standup Log created ✓`);
   return response.id;
 }
 
@@ -127,7 +137,7 @@ async function validateDB(dbId: string, name: string, requiredProps: string[]): 
   const props = Object.keys(db.properties);
   const missing = requiredProps.filter((p) => !props.includes(p));
   if (missing.length > 0) throw new Error(`${name} is missing properties: ${missing.join(', ')}`);
-  log(`${name} ✓`);
+  console.log(`  ${name} ✓`);
 }
 
 async function main() {
@@ -144,29 +154,46 @@ async function main() {
     return;
   }
 
-  console.log('No database IDs found — creating Notion workspace from scratch...\n');
+  console.log('No database IDs found — creating databases from scratch.\n');
+  console.log('Before continuing, make sure you have:');
+  console.log('  1. Created an empty page in Notion (e.g. "Notion of Progress")');
+  console.log('  2. Connected your integration to it: ··· → Connections → <your integration>\n');
 
-  const parentPageId = await createParentPage();
+  const pageUrl = await prompt('Paste the URL of that Notion page: ');
+  let parentPageId: string;
+
+  try {
+    parentPageId = extractPageId(pageUrl);
+  } catch (e) {
+    console.error(`\n❌ ${(e as Error).message}`);
+    process.exit(1);
+  }
+
+  // Verify we can access the page
+  try {
+    await notion.pages.retrieve({ page_id: parentPageId });
+    console.log('\n  Page found ✓\n');
+  } catch {
+    console.error('\n❌ Could not access that page. Make sure you connected your integration to it.\n');
+    process.exit(1);
+  }
+
   const taskDbId = await createTaskDB(parentPageId);
   const standupLogDbId = await createStandupLogDB(parentPageId);
 
-  log('Writing DB IDs to .env...');
+  console.log('\n  Writing DB IDs to .env...');
   updateEnv('NOTION_TASK_DB_ID', taskDbId);
   updateEnv('NOTION_STANDUP_LOG_DB_ID', standupLogDbId);
 
   console.log(`
 ✅ Setup complete!
 
-  Parent page:  https://www.notion.so/${parentPageId.replace(/-/g, '')}
   Task DB:      https://www.notion.so/${taskDbId.replace(/-/g, '')}
   Standup Log:  https://www.notion.so/${standupLogDbId.replace(/-/g, '')}
 
   DB IDs have been saved to your .env automatically.
 
-⚠️  Important: open the "Notion of Progress" page in Notion and
-  connect your integration via ··· → Connect to → <your integration>
-
-  Then run: npm run standup
+  Run: npm run standup
 `);
 }
 
