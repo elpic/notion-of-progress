@@ -1,7 +1,7 @@
 import cron from 'node-cron';
-import { runStandup } from './agent/standup.ts';
-import { config } from './config/index.ts';
-import { logger } from './utils/logger.ts';
+import { runStandup } from './agent/standup';
+import { config } from './config/index';
+import { logger } from './utils/logger';
 
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught exception', err);
