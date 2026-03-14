@@ -3,7 +3,7 @@
 // - Call claude-sonnet-4-6 and parse JSON response
 // - Fallback: regex extractor if JSON is wrapped in markdown code block
 
-import type { TaskSummary, StandupSummary } from '../notion/types.js';
+import type { TaskSummary, StandupSummary } from '../notion/types.ts';
 
 export async function generateSummary(
   completed: TaskSummary[],

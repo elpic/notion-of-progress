@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { getNotionClient } from '../src/notion/client.js';
-import { config } from '../src/config/index.js';
-import { logger } from '../src/utils/logger.js';
+import { getNotionClient } from '../src/notion/client.ts';
+import { config } from '../src/config/index.ts';
+import { logger } from '../src/utils/logger.ts';
 
 async function validateDB(dbId: string, name: string, requiredProps: string[]): Promise<void> {
   const notion = getNotionClient();

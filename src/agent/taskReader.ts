@@ -1,7 +1,7 @@
-import { getNotionClient } from '../notion/client.js';
-import { config } from '../config/index.js';
-import { startOfYesterday, startOfToday } from '../utils/dateHelpers.js';
-import type { TaskSummary } from '../notion/types.js';
+import { getNotionClient } from '../notion/client.ts';
+import { config } from '../config/index.ts';
+import { startOfYesterday, startOfToday } from '../utils/dateHelpers.ts';
+import type { TaskSummary } from '../notion/types.ts';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 
 function extractText(page: PageObjectResponse, property: string): string {
