@@ -1,5 +1,8 @@
 import cron from 'node-cron';
-import { runStandup } from './agent/standup';
+import { StandupService } from './core/standup';
+import { NotionTaskRepository } from './adapters/notion/NotionTaskRepository';
+import { NotionStandupRepository } from './adapters/notion/NotionStandupRepository';
+import { ClaudeSummaryGenerator } from './adapters/claude/ClaudeSummaryGenerator';
 import { config } from './config/index';
 import { logger } from './utils/logger';
 
@@ -8,14 +11,20 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-logger.info(`Notion of Progress scheduler starting...`);
+const service = new StandupService(
+  new NotionTaskRepository(),
+  new ClaudeSummaryGenerator(),
+  new NotionStandupRepository()
+);
+
+logger.info('Notion of Progress scheduler starting...');
 logger.info(`Schedule: ${config.scheduler.cronSchedule} (${config.scheduler.timezone})`);
 
 cron.schedule(
   config.scheduler.cronSchedule,
   async () => {
     try {
-      await runStandup();
+      await service.run();
     } catch (err) {
       logger.error('Standup run failed', err);
     }
