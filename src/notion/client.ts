@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { config } from '../config/index.ts';
+import { config } from '../config/index.js';
 
 let _client: Client | null = null;
 

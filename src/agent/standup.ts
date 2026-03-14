@@ -1,10 +1,10 @@
 // Core orchestrator: taskReader → summarizer → standupWriter
 
-import { fetchTasks } from './taskReader.ts';
-import { generateSummary } from './summarizer.ts';
-import { writeStandup } from './standupWriter.ts';
-import { logger } from '../utils/logger.ts';
-import { todayISO } from '../utils/dateHelpers.ts';
+import { fetchTasks } from './taskReader.js';
+import { generateSummary } from './summarizer.js';
+import { writeStandup } from './standupWriter.js';
+import { logger } from '../utils/logger.js';
+import { todayISO } from '../utils/dateHelpers.js';
 
 export async function runStandup(): Promise<void> {
   logger.info(`Running standup for ${todayISO()}`);
