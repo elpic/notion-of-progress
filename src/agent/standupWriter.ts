@@ -1,7 +1,7 @@
-import { getNotionClient } from '../notion/client.ts';
-import { config } from '../config/index.ts';
-import { todayISO } from '../utils/dateHelpers.ts';
-import type { StandupSummary } from '../notion/types.ts';
+import { getNotionClient } from '../notion/client';
+import { config } from '../config/index';
+import { todayISO } from '../utils/dateHelpers';
+import type { StandupSummary } from '../notion/types';
 
 function bulletBlocks(items: string[]) {
   if (items.length === 0) {

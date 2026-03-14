@@ -9,7 +9,6 @@
     "outDir": "dist",
     "rootDir": ".",
     "resolveJsonModule": true,
-    "allowImportingTsExtensions": true,
     "noEmit": true
   },
   "include": ["src/**/*", "scripts/**/*"],
