@@ -5,7 +5,11 @@ import { config } from '../../config/index';
 import { todayISO, todayFormatted } from '../../utils/dateHelpers';
 import { withRetry, isNotionRateLimit } from '../../utils/retry';
 
-const PAGE_ICONS = ['🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️'];
+const PAGE_ICONS = [
+  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
+  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
+  '🐉', '🎲', '🧩', '🌺', '⚙️', '🦅', '🎪', '🍉', '🔮', '🌍',
+];
 
 function randomIcon(): string {
   return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
