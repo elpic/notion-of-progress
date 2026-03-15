@@ -99,7 +99,7 @@ export class NotionStandupRepository implements StandupRepository {
       () => notion.pages.create({
         parent: { database_id: config.notion.standupLogDbId },
         properties: {
-          Title: { title: [{ type: 'text', text: { content: `Standup — ${todayFormatted()}` } }] },
+          Title: { title: [{ type: 'text', text: { content: `Standup · ${todayFormatted()}` } }] },
           Date: { date: { start: today } },
           Status: { select: { name: 'Generated' } },
           'Tasks Reviewed': { number: taskCount },
