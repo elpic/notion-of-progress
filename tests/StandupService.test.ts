@@ -29,6 +29,7 @@ function makeMocks() {
     generateSummary: vi.fn().mockResolvedValue(mockSummary),
   };
   const standup: StandupRepository = {
+    existsForToday: vi.fn().mockResolvedValue(false),
     writeStandup: vi.fn().mockResolvedValue('https://notion.so/standup-123'),
     writeFailedStandup: vi.fn().mockResolvedValue(undefined),
   };
@@ -80,6 +81,18 @@ describe('StandupService', () => {
 
     await expect(service.run()).rejects.toThrow('Claude API error');
     expect(standup.writeFailedStandup).toHaveBeenCalledWith('Claude API error');
+    expect(standup.writeStandup).not.toHaveBeenCalled();
+  });
+
+  it('skips if a standup already exists for today', async () => {
+    const { tasks, summarizer, standup } = makeMocks();
+    (standup.existsForToday as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    const service = new StandupService(tasks, summarizer, standup);
+
+    await service.run();
+
+    expect(tasks.fetchTasks).not.toHaveBeenCalled();
+    expect(summarizer.generateSummary).not.toHaveBeenCalled();
     expect(standup.writeStandup).not.toHaveBeenCalled();
   });
 

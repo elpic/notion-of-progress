@@ -15,6 +15,12 @@ export class StandupService {
     logger.info(`Running standup for ${todayISO()}`);
 
     try {
+      const alreadyExists = await this.standup.existsForToday();
+      if (alreadyExists) {
+        logger.warn('Standup for today already exists — skipping');
+        return;
+      }
+
       const { completed, active } = await this.tasks.fetchTasks();
       logger.info(`Fetched ${completed.length} completed, ${active.length} active tasks`);
 

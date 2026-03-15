@@ -71,6 +71,17 @@ function paragraph(content: string, italic = false): BlockRequest {
 }
 
 export class NotionStandupRepository implements StandupRepository {
+  async existsForToday(): Promise<boolean> {
+    const notion = getNotionClient();
+    const today = todayISO();
+    const response = await notion.databases.query({
+      database_id: config.notion.standupLogDbId,
+      filter: { property: 'Date', date: { equals: today } },
+      page_size: 1,
+    });
+    return response.results.length > 0;
+  }
+
   async writeStandup(summary: StandupSummary, completed: TaskSummary[], active: TaskSummary[]): Promise<string> {
     const notion = getNotionClient();
     const today = todayISO();
