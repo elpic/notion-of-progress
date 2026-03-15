@@ -21,6 +21,10 @@ run = "npm run setup"
 description = "Run the standup pipeline once"
 run = "npm run standup"
 
+[tasks.standup-mcp]
+description = "Run the standup using Claude Agent SDK with Notion MCP"
+run = "npm run standup:mcp"
+
 [tasks.start]
 description = "Start the scheduler"
 run = "npm start"
