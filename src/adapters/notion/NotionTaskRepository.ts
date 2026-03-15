@@ -3,6 +3,7 @@ import type { TaskSummary } from '../../core/domain/types';
 import { getNotionClient } from '../../notion/client';
 import { config } from '../../config/index';
 import { startOfYesterday } from '../../utils/dateHelpers';
+import { withRetry, isNotionRateLimit } from '../../utils/retry';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 
 function extractText(page: PageObjectResponse, property: string): string {
@@ -44,12 +45,15 @@ export class NotionTaskRepository implements TaskRepository {
     let cursor: string | undefined;
 
     do {
-      const response = await notion.databases.query({
-        database_id: config.notion.taskDbId,
-        filter: filter as Parameters<typeof notion.databases.query>[0]['filter'],
-        start_cursor: cursor,
-        page_size: 100,
-      });
+      const response = await withRetry(
+        () => notion.databases.query({
+          database_id: config.notion.taskDbId,
+          filter: filter as Parameters<typeof notion.databases.query>[0]['filter'],
+          start_cursor: cursor,
+          page_size: 100,
+        }),
+        { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit }
+      );
 
       for (const page of response.results) {
         if (page.object === 'page' && 'properties' in page) {
