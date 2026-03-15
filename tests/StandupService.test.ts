@@ -29,7 +29,7 @@ function makeMocks() {
     generateSummary: vi.fn().mockResolvedValue(mockSummary),
   };
   const standup: StandupRepository = {
-    existsForToday: vi.fn().mockResolvedValue(false),
+    findTodayPageId: vi.fn().mockResolvedValue(null),
     writeStandup: vi.fn().mockResolvedValue('https://notion.so/standup-123'),
     writeFailedStandup: vi.fn().mockResolvedValue(undefined),
   };
@@ -45,7 +45,7 @@ describe('StandupService', () => {
 
     expect(tasks.fetchTasks).toHaveBeenCalledOnce();
     expect(summarizer.generateSummary).toHaveBeenCalledWith([mockTask], []);
-    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], []);
+    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], [], undefined);
     expect(standup.writeFailedStandup).not.toHaveBeenCalled();
   });
 
@@ -59,7 +59,7 @@ describe('StandupService', () => {
 
     await service.run();
 
-    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], [{ ...mockTask, id: '2', status: 'In Progress' }]);
+    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], [{ ...mockTask, id: '2', status: 'In Progress' }], undefined);
   });
 
   it('still runs when no tasks are found', async () => {
@@ -84,16 +84,16 @@ describe('StandupService', () => {
     expect(standup.writeStandup).not.toHaveBeenCalled();
   });
 
-  it('skips if a standup already exists for today', async () => {
+  it('updates existing page when standup already exists for today', async () => {
     const { tasks, summarizer, standup } = makeMocks();
-    (standup.existsForToday as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (standup.findTodayPageId as ReturnType<typeof vi.fn>).mockResolvedValue('existing-page-id');
     const service = new StandupService(tasks, summarizer, standup);
 
     await service.run();
 
-    expect(tasks.fetchTasks).not.toHaveBeenCalled();
-    expect(summarizer.generateSummary).not.toHaveBeenCalled();
-    expect(standup.writeStandup).not.toHaveBeenCalled();
+    expect(tasks.fetchTasks).toHaveBeenCalled();
+    expect(summarizer.generateSummary).toHaveBeenCalled();
+    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], [], 'existing-page-id');
   });
 
   it('writes a failed standup page when task fetch fails', async () => {
