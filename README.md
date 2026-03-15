@@ -111,14 +111,29 @@ This will:
 
 > **Tip:** Before running setup, open your Notion page → click `···` → **Connections** → connect your integration.
 
-**4. Run your first standup**
+**4. (Optional) Connect to Notion My Tasks**
+
+The Task DB has **Status**, **Assignee**, and **Due Date** properties — everything needed to power Notion's built-in **My tasks** view. This is a one-time manual step:
+
+1. Open your **Task DB** in Notion
+2. Click `···` (top right) → **Turn into task database**
+3. Go to your **Home** page in the Notion sidebar
+4. Scroll to the **My tasks** widget → click **Settings**
+5. Under **Task sources**, select your **Task DB**
+6. Click **Done**
+
+Any task with **Assignee** set to you will now appear in **My tasks** automatically.
+
+> **Note:** This cannot be automated via the Notion API — it must be done manually in the Notion app.
+
+**5. Run your first standup**
 
 ```bash
 npm run standup
 # or: mise run standup
 ```
 
-**5. Start the scheduler**
+**6. Start the scheduler**
 
 ```bash
 npm start
