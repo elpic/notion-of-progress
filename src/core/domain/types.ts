@@ -8,8 +8,13 @@ export interface TaskSummary {
   url: string;
 }
 
+export interface StandupBullet {
+  text: string;
+  taskId?: string;
+}
+
 export interface StandupSummary {
-  yesterday: string[];
-  today: string[];
-  blockers: string[];
+  yesterday: StandupBullet[];
+  today: StandupBullet[];
+  blockers: StandupBullet[];
 }

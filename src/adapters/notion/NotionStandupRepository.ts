@@ -1,8 +1,8 @@
 import type { StandupRepository } from '../../core/ports/StandupRepository';
-import type { StandupSummary, TaskSummary } from '../../core/domain/types';
+import type { StandupSummary, StandupBullet, TaskSummary } from '../../core/domain/types';
 import { getNotionClient } from '../../notion/client';
 import { config } from '../../config/index';
-import { todayISO } from '../../utils/dateHelpers';
+import { todayISO, todayFormatted } from '../../utils/dateHelpers';
 import { withRetry, isNotionRateLimit } from '../../utils/retry';
 
 type RichTextItem = {
@@ -34,15 +34,16 @@ function callout(emoji: string, text: string, color: string): Block {
   };
 }
 
-function linkedBullet(text: string, url?: string): Block {
+function linkedBullet(bullet: StandupBullet, taskIndex: Map<string, TaskSummary>): Block {
+  const task = bullet.taskId ? taskIndex.get(bullet.taskId) : undefined;
   const richText: RichTextItem[] = [
-    { type: 'text', text: { content: text } },
+    { type: 'text', text: { content: bullet.text } },
   ];
 
-  if (url) {
+  if (task?.url) {
     richText.push({
       type: 'text',
-      text: { content: ' ↗', link: { url } },
+      text: { content: ' ↗', link: { url: task.url } },
       annotations: { color: 'gray' },
     });
   }
@@ -72,37 +73,33 @@ function paragraph(text: string, italic = false): Block {
   };
 }
 
-// Match a bullet text to a task by looking for the task title as a substring
-function findTaskUrl(bullet: string, tasks: TaskSummary[]): string | undefined {
-  const lower = bullet.toLowerCase();
-  const match = tasks.find((t) => lower.includes(t.title.toLowerCase().slice(0, 20)));
-  return match?.url;
-}
-
 export class NotionStandupRepository implements StandupRepository {
   async writeStandup(summary: StandupSummary, completed: TaskSummary[], active: TaskSummary[]): Promise<string> {
     const notion = getNotionClient();
     const today = todayISO();
     const allTasks = [...completed, ...active];
     const taskCount = allTasks.length;
+    const taskIndex = new Map(allTasks.map((t) => [t.id, t]));
+
+    const noBullet = (text: string): Block => linkedBullet({ text }, taskIndex);
 
     const yesterdayBullets = summary.yesterday.length > 0
-      ? summary.yesterday.map((b) => linkedBullet(b, findTaskUrl(b, completed)))
-      : [linkedBullet('Nothing completed yesterday.')];
+      ? summary.yesterday.map((b) => linkedBullet(b, taskIndex))
+      : [noBullet('Nothing completed yesterday.')];
 
     const todayBullets = summary.today.length > 0
-      ? summary.today.map((b) => linkedBullet(b, findTaskUrl(b, active)))
-      : [linkedBullet('Nothing planned for today.')];
+      ? summary.today.map((b) => linkedBullet(b, taskIndex))
+      : [noBullet('Nothing planned for today.')];
 
     const blockerBullets = summary.blockers.length > 0
-      ? summary.blockers.map((b) => linkedBullet(b, findTaskUrl(b, active)))
-      : [linkedBullet('No blockers.')];
+      ? summary.blockers.map((b) => linkedBullet(b, taskIndex))
+      : [noBullet('No blockers.')];
 
     const response = await withRetry(
       () => notion.pages.create({
         parent: { database_id: config.notion.standupLogDbId },
         properties: {
-          Title: { title: [{ type: 'text', text: { content: `Standup — ${today}` } }] },
+          Title: { title: [{ type: 'text', text: { content: `Standup — ${todayFormatted()}` } }] },
           Date: { date: { start: today } },
           Status: { select: { name: 'Generated' } },
           'Tasks Reviewed': { number: taskCount },

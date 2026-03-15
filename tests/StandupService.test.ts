@@ -16,8 +16,8 @@ const mockTask: TaskSummary = {
 };
 
 const mockSummary: StandupSummary = {
-  yesterday: ['Completed auth module'],
-  today: ['Start notification service'],
+  yesterday: [{ text: 'Completed auth module', taskId: '1' }],
+  today: [{ text: 'Start notification service' }],
   blockers: [],
 };
 

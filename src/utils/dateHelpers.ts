@@ -15,3 +15,7 @@ export function startOfYesterday(): string {
 export function startOfToday(): string {
   return `${todayISO()}T00:00:00.000Z`;
 }
+
+export function todayFormatted(): string {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
