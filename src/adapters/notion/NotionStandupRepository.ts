@@ -4,6 +4,14 @@ import { getNotionClient } from '../../notion/client';
 import { config } from '../../config/index';
 import { todayISO, todayFormatted } from '../../utils/dateHelpers';
 import { withRetry, isNotionRateLimit } from '../../utils/retry';
+import type { Client } from '@notionhq/client';
+
+type CreatePageParams = Parameters<Client['pages']['create']>[0];
+type BlockRequest = NonNullable<CreatePageParams['children']>[number];
+type RichText = Extract<BlockRequest, { type?: 'paragraph' }>['paragraph']['rich_text'][number];
+type ApiColor = 'default' | 'gray' | 'brown' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'red'
+  | 'default_background' | 'gray_background' | 'brown_background' | 'orange_background' | 'yellow_background'
+  | 'green_background' | 'blue_background' | 'purple_background' | 'pink_background' | 'red_background';
 
 const PAGE_ICONS = [
   '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
@@ -15,72 +23,51 @@ function randomIcon(): string {
   return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
 }
 
-type RichTextItem = {
-  type: 'text';
-  text: { content: string; link?: { url: string } | null };
-  annotations?: {
-    bold?: boolean;
-    italic?: boolean;
-    code?: boolean;
-    color?: string;
-  };
-};
-
-type Block =
-  | { object: 'block'; type: 'callout'; callout: { rich_text: RichTextItem[]; icon: { type: 'emoji'; emoji: string }; color: string } }
-  | { object: 'block'; type: 'bulleted_list_item'; bulleted_list_item: { rich_text: RichTextItem[]; color?: string } }
-  | { object: 'block'; type: 'divider'; divider: Record<string, never> }
-  | { object: 'block'; type: 'paragraph'; paragraph: { rich_text: RichTextItem[] } };
-
-function callout(emoji: string, text: string, color: string): Block {
+function richText(content: string, url?: string, opts: { italic?: boolean; color?: ApiColor } = {}): RichText {
   return {
-    object: 'block',
-    type: 'callout',
-    callout: {
-      rich_text: [{ type: 'text', text: { content: text } }],
-      icon: { type: 'emoji', emoji },
-      color,
+    type: 'text',
+    text: { content, link: url ? { url } : null },
+    annotations: {
+      ...(opts.italic ? { italic: true } : {}),
+      ...(opts.color ? { color: opts.color } : {}),
     },
-  };
+  } as RichText;
 }
 
-function linkedBullet(bullet: StandupBullet, taskIndex: Map<string, TaskSummary>): Block {
+function callout(emoji: string, content: string, color: string): BlockRequest {
+  return {
+    type: 'callout',
+    callout: {
+      rich_text: [richText(content)],
+      icon: { type: 'emoji', emoji } as { type: 'emoji'; emoji: never },
+      color,
+    },
+  } as BlockRequest;
+}
+
+function linkedBullet(bullet: StandupBullet, taskIndex: Map<string, TaskSummary>): BlockRequest {
   const task = bullet.taskId ? taskIndex.get(bullet.taskId) : undefined;
-  const richText: RichTextItem[] = [
-    { type: 'text', text: { content: bullet.text } },
-  ];
+  const parts: RichText[] = [richText(bullet.text)];
 
   if (task?.url) {
-    richText.push({
-      type: 'text',
-      text: { content: ' ↗', link: { url: task.url } },
-      annotations: { color: 'gray' },
-    });
+    parts.push(richText(' ↗', task.url, { color: 'gray' }));
   }
 
   return {
-    object: 'block',
     type: 'bulleted_list_item',
-    bulleted_list_item: { rich_text: richText },
-  };
+    bulleted_list_item: { rich_text: parts },
+  } as BlockRequest;
 }
 
-function divider(): Block {
-  return { object: 'block', type: 'divider', divider: {} };
+function divider(): BlockRequest {
+  return { type: 'divider', divider: {} } as BlockRequest;
 }
 
-function paragraph(text: string, italic = false): Block {
+function paragraph(content: string, italic = false): BlockRequest {
   return {
-    object: 'block',
     type: 'paragraph',
-    paragraph: {
-      rich_text: [{
-        type: 'text',
-        text: { content: text },
-        annotations: { italic, color: 'gray' },
-      }],
-    },
-  };
+    paragraph: { rich_text: [richText(content, undefined, { italic, color: 'gray' })] },
+  } as BlockRequest;
 }
 
 export class NotionStandupRepository implements StandupRepository {
@@ -91,7 +78,7 @@ export class NotionStandupRepository implements StandupRepository {
     const taskCount = allTasks.length;
     const taskIndex = new Map(allTasks.map((t) => [t.id, t]));
 
-    const noBullet = (text: string): Block => linkedBullet({ text }, taskIndex);
+    const noBullet = (content: string): BlockRequest => linkedBullet({ text: content }, taskIndex);
 
     const yesterdayBullets = summary.yesterday.length > 0
       ? summary.yesterday.map((b) => linkedBullet(b, taskIndex))
@@ -108,7 +95,7 @@ export class NotionStandupRepository implements StandupRepository {
     const response = await withRetry(
       () => notion.pages.create({
         parent: { database_id: config.notion.standupLogDbId },
-        icon: { type: 'emoji', emoji: randomIcon() },
+        icon: { type: 'emoji', emoji: randomIcon() as never },
         properties: {
           Title: { title: [{ type: 'text', text: { content: `Standup · ${todayFormatted()}` } }] },
           Date: { date: { start: today } },
