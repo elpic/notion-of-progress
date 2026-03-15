@@ -47,16 +47,16 @@ describe('ClaudeSummaryGenerator', () => {
       content: [{
         type: 'text',
         text: JSON.stringify({
-          yesterday: ['Completed auth module'],
-          today: ['Start notifications'],
+          yesterday: [{ text: 'Completed auth module', taskId: '1' }],
+          today: [{ text: 'Start notifications' }],
           blockers: [],
         }),
       }],
     });
 
     const result = await generator.generateSummary([mockTask], []);
-    expect(result.yesterday).toEqual(['Completed auth module']);
-    expect(result.today).toEqual(['Start notifications']);
+    expect(result.yesterday).toEqual([{ text: 'Completed auth module', taskId: '1' }]);
+    expect(result.today).toEqual([{ text: 'Start notifications' }]);
     expect(result.blockers).toEqual([]);
   });
 
@@ -69,12 +69,12 @@ describe('ClaudeSummaryGenerator', () => {
     });
 
     const result = await generator.generateSummary([mockTask], []);
-    expect(result.yesterday).toEqual(['Did stuff']);
+    expect(result.yesterday).toEqual([{ text: 'Did stuff' }]);
   });
 
   it('returns empty arrays for missing fields in JSON', async () => {
     mockCreate.mockResolvedValue({
-      content: [{ type: 'text', text: '{"yesterday":["Done something"]}' }],
+      content: [{ type: 'text', text: '{"yesterday":[{"text":"Done something"}]}' }],
     });
 
     const result = await generator.generateSummary([mockTask], []);

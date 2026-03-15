@@ -1,70 +1,118 @@
 import type { StandupRepository } from '../../core/ports/StandupRepository';
-import type { StandupSummary } from '../../core/domain/types';
+import type { StandupSummary, StandupBullet, TaskSummary } from '../../core/domain/types';
 import { getNotionClient } from '../../notion/client';
 import { config } from '../../config/index';
-import { todayISO } from '../../utils/dateHelpers';
+import { todayISO, todayFormatted } from '../../utils/dateHelpers';
 import { withRetry, isNotionRateLimit } from '../../utils/retry';
+import type { Client } from '@notionhq/client';
 
-function bulletBlocks(items: string[]) {
-  const content = items.length > 0 ? items : ['Nothing to report.'];
-  return content.map((item) => ({
-    object: 'block' as const,
-    type: 'bulleted_list_item' as const,
-    bulleted_list_item: {
-      rich_text: [{ type: 'text' as const, text: { content: item } }],
-    },
-  }));
+type CreatePageParams = Parameters<Client['pages']['create']>[0];
+type BlockRequest = NonNullable<CreatePageParams['children']>[number];
+type RichText = Extract<BlockRequest, { type?: 'paragraph' }>['paragraph']['rich_text'][number];
+type ApiColor = 'default' | 'gray' | 'brown' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'red'
+  | 'default_background' | 'gray_background' | 'brown_background' | 'orange_background' | 'yellow_background'
+  | 'green_background' | 'blue_background' | 'purple_background' | 'pink_background' | 'red_background';
+
+const PAGE_ICONS = [
+  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
+  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
+  '🐉', '🎲', '🧩', '🌺', '⚙️', '🦅', '🎪', '🍉', '🔮', '🌍',
+];
+
+function randomIcon(): string {
+  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
 }
 
-function heading(text: string) {
+function richText(content: string, url?: string, opts: { italic?: boolean; color?: ApiColor } = {}): RichText {
   return {
-    object: 'block' as const,
-    type: 'heading_2' as const,
-    heading_2: { rich_text: [{ type: 'text' as const, text: { content: text } }] },
-  };
-}
-
-function divider() {
-  return { object: 'block' as const, type: 'divider' as const, divider: {} };
-}
-
-function paragraph(text: string) {
-  return {
-    object: 'block' as const,
-    type: 'paragraph' as const,
-    paragraph: {
-      rich_text: [{
-        type: 'text' as const,
-        text: { content: text },
-        annotations: { italic: true, bold: false, strikethrough: false, underline: false, code: false, color: 'default' as const },
-      }],
+    type: 'text',
+    text: { content, link: url ? { url } : null },
+    annotations: {
+      ...(opts.italic ? { italic: true } : {}),
+      ...(opts.color ? { color: opts.color } : {}),
     },
-  };
+  } as RichText;
+}
+
+function callout(emoji: string, content: string, color: string): BlockRequest {
+  return {
+    type: 'callout',
+    callout: {
+      rich_text: [richText(content)],
+      icon: { type: 'emoji', emoji } as { type: 'emoji'; emoji: never },
+      color,
+    },
+  } as BlockRequest;
+}
+
+function linkedBullet(bullet: StandupBullet, taskIndex: Map<string, TaskSummary>): BlockRequest {
+  const task = bullet.taskId ? taskIndex.get(bullet.taskId) : undefined;
+  const parts: RichText[] = [richText(bullet.text)];
+
+  if (task?.url) {
+    parts.push(richText(' ↗', task.url, { color: 'gray' }));
+  }
+
+  return {
+    type: 'bulleted_list_item',
+    bulleted_list_item: { rich_text: parts },
+  } as BlockRequest;
+}
+
+function divider(): BlockRequest {
+  return { type: 'divider', divider: {} } as BlockRequest;
+}
+
+function paragraph(content: string, italic = false): BlockRequest {
+  return {
+    type: 'paragraph',
+    paragraph: { rich_text: [richText(content, undefined, { italic, color: 'gray' })] },
+  } as BlockRequest;
 }
 
 export class NotionStandupRepository implements StandupRepository {
-  async writeStandup(summary: StandupSummary, taskCount: number): Promise<string> {
+  async writeStandup(summary: StandupSummary, completed: TaskSummary[], active: TaskSummary[]): Promise<string> {
     const notion = getNotionClient();
     const today = todayISO();
+    const allTasks = [...completed, ...active];
+    const taskCount = allTasks.length;
+    const taskIndex = new Map(allTasks.map((t) => [t.id, t]));
+
+    const noBullet = (content: string): BlockRequest => linkedBullet({ text: content }, taskIndex);
+
+    const yesterdayBullets = summary.yesterday.length > 0
+      ? summary.yesterday.map((b) => linkedBullet(b, taskIndex))
+      : [noBullet('Nothing completed yesterday.')];
+
+    const todayBullets = summary.today.length > 0
+      ? summary.today.map((b) => linkedBullet(b, taskIndex))
+      : [noBullet('Nothing planned for today.')];
+
+    const blockerBullets = summary.blockers.length > 0
+      ? summary.blockers.map((b) => linkedBullet(b, taskIndex))
+      : [noBullet('No blockers.')];
 
     const response = await withRetry(
       () => notion.pages.create({
         parent: { database_id: config.notion.standupLogDbId },
+        icon: { type: 'emoji', emoji: randomIcon() as never },
         properties: {
-          Title: { title: [{ type: 'text', text: { content: `Standup — ${today}` } }] },
+          Title: { title: [{ type: 'text', text: { content: `Standup · ${todayFormatted()}` } }] },
           Date: { date: { start: today } },
           Status: { select: { name: 'Generated' } },
           'Tasks Reviewed': { number: taskCount },
         },
         children: [
-          heading('Yesterday'),
-          ...bulletBlocks(summary.yesterday),
-          heading('Today'),
-          ...bulletBlocks(summary.today),
-          heading('Blockers'),
-          ...bulletBlocks(summary.blockers),
+          callout('📊', `${completed.length} completed · ${active.length} active · ${summary.blockers.length} blocker${summary.blockers.length !== 1 ? 's' : ''}`, 'gray_background'),
           divider(),
-          paragraph(`Generated by Notion of Progress at ${new Date().toLocaleTimeString()}`),
+          callout('✅', 'Yesterday', 'green_background'),
+          ...yesterdayBullets,
+          callout('🔨', 'Today', 'blue_background'),
+          ...todayBullets,
+          callout('🚧', 'Blockers', summary.blockers.length > 0 ? 'red_background' : 'gray_background'),
+          ...blockerBullets,
+          divider(),
+          paragraph(`Generated by Notion of Progress · ${new Date().toLocaleTimeString()}`, true),
         ],
       }),
       { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit }
@@ -87,7 +135,7 @@ export class NotionStandupRepository implements StandupRepository {
           'Tasks Reviewed': { number: 0 },
         },
         children: [
-          paragraph(`Standup generation failed: ${error}`),
+          callout('❌', `Standup generation failed: ${error}`, 'red_background'),
         ],
       });
     } catch {

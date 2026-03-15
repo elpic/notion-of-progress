@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { SummaryGenerator } from '../../core/ports/SummaryGenerator';
-import type { TaskSummary, StandupSummary } from '../../core/domain/types';
+import type { TaskSummary, StandupSummary, StandupBullet } from '../../core/domain/types';
 import { config } from '../../config/index';
 import { todayISO, yesterdayISO } from '../../utils/dateHelpers';
 import { withRetry } from '../../utils/retry';
@@ -9,9 +9,9 @@ const SYSTEM_PROMPT = `You are a technical standup assistant. Given a list of No
 
 Respond with ONLY a valid JSON object in this exact shape:
 {
-  "yesterday": ["bullet point 1", "bullet point 2"],
-  "today": ["bullet point 1", "bullet point 2"],
-  "blockers": ["blocker 1"]
+  "yesterday": [{ "text": "bullet point 1", "taskId": "abc123" }, { "text": "bullet point 2" }],
+  "today": [{ "text": "bullet point 1", "taskId": "def456" }],
+  "blockers": [{ "text": "blocker 1", "taskId": "ghi789" }]
 }
 
 Rules:
@@ -20,13 +20,29 @@ Rules:
 - "yesterday" = what was completed or progressed
 - "today" = what is planned or in progress
 - "blockers" = explicit blockers only — use empty array [] if none
+- "taskId" must match the id field from the task list exactly — omit if the bullet does not map to a single task
 - Do not wrap the JSON in markdown code blocks`;
 
 function formatTasks(tasks: TaskSummary[]): string {
   if (tasks.length === 0) return '(none)';
   return tasks
-    .map((t) => `- [${t.status}] ${t.title}${t.priority ? ` (${t.priority})` : ''}${t.dueDate ? ` — due ${t.dueDate}` : ''}`)
+    .map((t) => `- id:${t.id} [${t.status}] ${t.title}${t.priority ? ` (${t.priority})` : ''}${t.dueDate ? ` — due ${t.dueDate}` : ''}`)
     .join('\n');
+}
+
+function toBullets(items: unknown[]): StandupBullet[] {
+  return items.map((item) => {
+    if (typeof item === 'string') return { text: item };
+    if (typeof item === 'object' && item !== null && 'text' in item) {
+      return {
+        text: String((item as Record<string, unknown>).text),
+        taskId: typeof (item as Record<string, unknown>).taskId === 'string'
+          ? String((item as Record<string, unknown>).taskId)
+          : undefined,
+      };
+    }
+    return { text: String(item) };
+  });
 }
 
 function parseStandupJson(raw: string): StandupSummary {
@@ -36,9 +52,9 @@ function parseStandupJson(raw: string): StandupSummary {
   const parsed = JSON.parse(cleaned);
 
   return {
-    yesterday: Array.isArray(parsed.yesterday) ? parsed.yesterday : [],
-    today: Array.isArray(parsed.today) ? parsed.today : [],
-    blockers: Array.isArray(parsed.blockers) ? parsed.blockers : [],
+    yesterday: Array.isArray(parsed.yesterday) ? toBullets(parsed.yesterday) : [],
+    today: Array.isArray(parsed.today) ? toBullets(parsed.today) : [],
+    blockers: Array.isArray(parsed.blockers) ? toBullets(parsed.blockers) : [],
   };
 }
 
