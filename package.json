@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "standup": "tsx scripts/run-once.ts",
-    "standup:mcp": "tsx scripts/run-mcp.ts",
+    "standup": "tsx scripts/run-mcp.ts",
     "setup": "tsx scripts/setup-notion.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

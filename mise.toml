@@ -18,12 +18,8 @@ description = "Create Notion databases and configure .env"
 run = "npm run setup"
 
 [tasks.standup]
-description = "Run the standup pipeline once"
+description = "Run the standup agent via Notion MCP"
 run = "npm run standup"
-
-[tasks.standup-mcp]
-description = "Run the standup using Claude Agent SDK with Notion MCP"
-run = "npm run standup:mcp"
 
 [tasks.start]
 description = "Start the scheduler"
