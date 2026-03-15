@@ -102,6 +102,7 @@ async function createTaskDB(parentPageId: string): Promise<string> {
       },
       'Due Date': { date: {} },
       Notes: { rich_text: {} },
+      Assignee: { people: {} },
     },
   });
   console.log(`  Task DB created ✓`);
