@@ -75,6 +75,8 @@ async function writeStandupViaMcp(
 
   let standupUrl = '';
 
+  process.stdout.write('\n');
+
   for await (const message of query({
     prompt: buildWritePrompt(summary, completed, active),
     options: {
@@ -99,18 +101,19 @@ async function writeStandupViaMcp(
     if (message.type === 'assistant' && Array.isArray(message.message?.content)) {
       for (const block of message.message.content) {
         if (block.type === 'text' && block.text) {
-          logger.info(`[Claude] ${block.text.slice(0, 200)}`);
+          process.stdout.write(`💭 ${block.text}\n`);
         } else if (block.type === 'tool_use') {
-          logger.info(`[Tool call] ${block.name}`);
+          process.stdout.write(`🔧 ${block.name}\n`);
         }
       }
     } else if ('result' in message) {
       const result = message.result ?? '';
       const urlMatch = result.match(/https:\/\/www\.notion\.so\/[^\s)>\]"]+/);
       if (urlMatch) standupUrl = urlMatch[0];
-      logger.info(`[MCP result] ${result.slice(0, 200)}`);
     }
   }
+
+  process.stdout.write('\n');
 
   if (!standupUrl) {
     throw new Error('MCP agent completed but no standup URL was found in the output');
