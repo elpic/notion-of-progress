@@ -15,6 +15,11 @@ export class StandupService {
     logger.info(`Running standup for ${todayISO()}`);
 
     try {
+      const existingPageId = await this.standup.findTodayPageId();
+      if (existingPageId) {
+        logger.warn('Standup for today already exists — updating');
+      }
+
       const { completed, active } = await this.tasks.fetchTasks();
       logger.info(`Fetched ${completed.length} completed, ${active.length} active tasks`);
 
@@ -25,7 +30,7 @@ export class StandupService {
       const summary = await this.summarizer.generateSummary(completed, active);
       logger.info('Summary generated');
 
-      const pageUrl = await this.standup.writeStandup(summary, completed, active);
+      const pageUrl = await this.standup.writeStandup(summary, completed, active, existingPageId ?? undefined);
       logger.info(`Standup written: ${pageUrl}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
