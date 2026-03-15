@@ -16,8 +16,10 @@ function extractText(page: PageObjectResponse, property: string): string {
 
 function extractSelect(page: PageObjectResponse, property: string): string | null {
   const prop = page.properties[property];
-  if (!prop || prop.type !== 'select') return null;
-  return prop.select?.name ?? null;
+  if (!prop) return null;
+  if (prop.type === 'select') return prop.select?.name ?? null;
+  if (prop.type === 'status') return prop.status?.name ?? null;
+  return null;
 }
 
 function extractDate(page: PageObjectResponse, property: string): string | null {
@@ -71,13 +73,13 @@ export class NotionTaskRepository implements TaskRepository {
     const [completed, active] = await Promise.all([
       this.queryDB({
         and: [
-          { property: config.notion.taskStatusProperty, select: { equals: config.notion.taskDoneValue } },
+          { property: config.notion.taskStatusProperty, status: { equals: config.notion.taskDoneValue } },
           { timestamp: 'last_edited_time', last_edited_time: { on_or_after: startOfYesterday() } },
         ],
       }),
       this.queryDB({
         property: config.notion.taskStatusProperty,
-        select: { does_not_equal: config.notion.taskDoneValue },
+        status: { does_not_equal: config.notion.taskDoneValue },
       }),
     ]);
 
