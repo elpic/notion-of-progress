@@ -1,0 +1,26 @@
+[tools]
+node = "23.7.0"
+
+[tasks.install]
+description = "Install dependencies"
+run = "npm ci"
+
+[tasks.typecheck]
+description = "Run TypeScript type check"
+run = "npm run typecheck"
+
+[tasks.test]
+description = "Run tests"
+run = "npm test"
+
+[tasks.setup]
+description = "Create Notion databases and configure .env"
+run = "npm run setup"
+
+[tasks.standup]
+description = "Run the standup pipeline once"
+run = "npm run standup"
+
+[tasks.start]
+description = "Start the scheduler"
+run = "npm start"
