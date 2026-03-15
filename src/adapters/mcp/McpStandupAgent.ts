@@ -70,12 +70,13 @@ async function writeStandupViaMcp(
   summary: StandupSummary,
   completed: TaskSummary[],
   active: TaskSummary[],
+  verbose: boolean,
 ): Promise<string> {
   logger.info('Writing standup page via Notion MCP');
 
   let standupUrl = '';
 
-  process.stdout.write('\n');
+  if (verbose) process.stdout.write('\n');
 
   for await (const message of query({
     prompt: buildWritePrompt(summary, completed, active),
@@ -100,9 +101,9 @@ async function writeStandupViaMcp(
   })) {
     if (message.type === 'assistant' && Array.isArray(message.message?.content)) {
       for (const block of message.message.content) {
-        if (block.type === 'text' && block.text) {
+        if (verbose && block.type === 'text' && block.text) {
           process.stdout.write(`💭 ${block.text}\n`);
-        } else if (block.type === 'tool_use') {
+        } else if (verbose && block.type === 'tool_use') {
           process.stdout.write(`🔧 ${block.name}\n`);
         }
       }
@@ -113,7 +114,7 @@ async function writeStandupViaMcp(
     }
   }
 
-  process.stdout.write('\n');
+  if (verbose) process.stdout.write('\n');
 
   if (!standupUrl) {
     throw new Error('MCP agent completed but no standup URL was found in the output');
@@ -124,7 +125,7 @@ async function writeStandupViaMcp(
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export async function runMcpStandupAgent(): Promise<string> {
+export async function runMcpStandupAgent({ verbose = false } = {}): Promise<string> {
   logger.info('Starting Notion MCP standup agent');
 
   // Phase 1: fetch tasks via typed Notion client (reliable)
@@ -139,5 +140,5 @@ export async function runMcpStandupAgent(): Promise<string> {
   const summary: StandupSummary = await summarizer.generateSummary(completed, active);
 
   // Phase 3: write the page autonomously via Notion MCP
-  return writeStandupViaMcp(summary, completed, active);
+  return writeStandupViaMcp(summary, completed, active, verbose);
 }
