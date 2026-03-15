@@ -12,7 +12,7 @@ No more staring at a blank standup form. No more forgotten tasks. Just open Noti
 
 ## Demo
 
-_Video coming soon_
+[![Watch the demo](https://img.youtube.com/vi/HdlLm24VofQ/maxresdefault.jpg)](https://youtu.be/HdlLm24VofQ)
 
 ---
 
