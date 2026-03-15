@@ -5,6 +5,12 @@ import { config } from '../../config/index';
 import { todayISO, todayFormatted } from '../../utils/dateHelpers';
 import { withRetry, isNotionRateLimit } from '../../utils/retry';
 
+const PAGE_ICONS = ['🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️'];
+
+function randomIcon(): string {
+  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
+}
+
 type RichTextItem = {
   type: 'text';
   text: { content: string; link?: { url: string } | null };
@@ -98,6 +104,7 @@ export class NotionStandupRepository implements StandupRepository {
     const response = await withRetry(
       () => notion.pages.create({
         parent: { database_id: config.notion.standupLogDbId },
+        icon: { type: 'emoji', emoji: randomIcon() },
         properties: {
           Title: { title: [{ type: 'text', text: { content: `Standup · ${todayFormatted()}` } }] },
           Date: { date: { start: today } },
