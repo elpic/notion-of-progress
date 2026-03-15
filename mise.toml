@@ -18,7 +18,7 @@ description = "Create Notion databases and configure .env"
 run = "npm run setup"
 
 [tasks.standup]
-description = "Run the standup pipeline once"
+description = "Run the standup agent via Notion MCP"
 run = "npm run standup"
 
 [tasks.start]
