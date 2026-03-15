@@ -14,13 +14,24 @@ export class StandupService {
   async run(): Promise<void> {
     logger.info(`Running standup for ${todayISO()}`);
 
-    const { completed, active } = await this.tasks.fetchTasks();
-    logger.info(`Fetched ${completed.length} completed, ${active.length} active tasks`);
+    try {
+      const { completed, active } = await this.tasks.fetchTasks();
+      logger.info(`Fetched ${completed.length} completed, ${active.length} active tasks`);
 
-    const summary = await this.summarizer.generateSummary(completed, active);
-    logger.info('Summary generated');
+      if (completed.length === 0 && active.length === 0) {
+        logger.warn('No tasks found — writing empty standup');
+      }
 
-    const pageUrl = await this.standup.writeStandup(summary, completed.length + active.length);
-    logger.info(`Standup written: ${pageUrl}`);
+      const summary = await this.summarizer.generateSummary(completed, active);
+      logger.info('Summary generated');
+
+      const pageUrl = await this.standup.writeStandup(summary, completed.length + active.length);
+      logger.info(`Standup written: ${pageUrl}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`Standup failed: ${message}`);
+      await this.standup.writeFailedStandup(message);
+      throw err;
+    }
   }
 }

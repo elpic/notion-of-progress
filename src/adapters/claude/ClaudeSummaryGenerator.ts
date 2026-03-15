@@ -3,6 +3,7 @@ import type { SummaryGenerator } from '../../core/ports/SummaryGenerator';
 import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { config } from '../../config/index';
 import { todayISO, yesterdayISO } from '../../utils/dateHelpers';
+import { withRetry } from '../../utils/retry';
 
 const SYSTEM_PROMPT = `You are a technical standup assistant. Given a list of Notion tasks, produce a concise standup summary.
 
@@ -62,12 +63,15 @@ ${formatTasks(active)}
 
 Generate the standup summary JSON.`;
 
-    const message = await this.client.messages.create({
-      model: config.anthropic.model,
-      max_tokens: 512,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: SYSTEM_PROMPT,
-    });
+    const message = await withRetry(
+      () => this.client.messages.create({
+        model: config.anthropic.model,
+        max_tokens: 512,
+        messages: [{ role: 'user', content: userPrompt }],
+        system: SYSTEM_PROMPT,
+      }),
+      { attempts: 2, delayMs: 2000 }
+    );
 
     const content = message.content[0];
     if (content.type !== 'text') {
