@@ -1,6 +1,6 @@
-import type { StandupSummary } from '../domain/types';
+import type { StandupSummary, TaskSummary } from '../domain/types';
 
 export interface StandupRepository {
-  writeStandup(summary: StandupSummary, taskCount: number): Promise<string>;
+  writeStandup(summary: StandupSummary, completed: TaskSummary[], active: TaskSummary[]): Promise<string>;
   writeFailedStandup(error: string): Promise<void>;
 }

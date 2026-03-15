@@ -44,7 +44,7 @@ describe('StandupService', () => {
 
     expect(tasks.fetchTasks).toHaveBeenCalledOnce();
     expect(summarizer.generateSummary).toHaveBeenCalledWith([mockTask], []);
-    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, 1);
+    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], []);
     expect(standup.writeFailedStandup).not.toHaveBeenCalled();
   });
 
@@ -58,7 +58,7 @@ describe('StandupService', () => {
 
     await service.run();
 
-    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, 2);
+    expect(standup.writeStandup).toHaveBeenCalledWith(mockSummary, [mockTask], [{ ...mockTask, id: '2', status: 'In Progress' }]);
   });
 
   it('still runs when no tasks are found', async () => {

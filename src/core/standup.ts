@@ -25,7 +25,7 @@ export class StandupService {
       const summary = await this.summarizer.generateSummary(completed, active);
       logger.info('Summary generated');
 
-      const pageUrl = await this.standup.writeStandup(summary, completed.length + active.length);
+      const pageUrl = await this.standup.writeStandup(summary, completed, active);
       logger.info(`Standup written: ${pageUrl}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
