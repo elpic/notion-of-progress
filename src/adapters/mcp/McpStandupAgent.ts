@@ -30,6 +30,17 @@ function randomIcon(): string {
 
 // ─── Phase 3: write the standup page via MCP ─────────────────────────────────
 
+/** Converts mcp__notion__API-patch-block-children → "NOTION API · Patch Block Children" */
+function formatToolName(raw: string): string {
+  // Strip mcp__notion__ prefix, then format the remainder
+  const name = raw.replace(/^mcp__\w+__/, '');
+  const readable = name
+    .replace(/^API-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return `NOTION API · ${readable}`;
+}
+
 function buildWritePrompt(
   summary: StandupSummary,
   completed: TaskSummary[],
@@ -115,9 +126,10 @@ async function writeStandupViaMcp(
     if (message.type === 'assistant' && Array.isArray(message.message?.content)) {
       for (const block of message.message.content) {
         if (verbose && block.type === 'text' && block.text) {
-          process.stdout.write(`💭 ${block.text}\n`);
+          process.stdout.write(`\x1b[1m[Claude]\x1b[0m ${block.text.trim()}\n\n`);
         } else if (verbose && block.type === 'tool_use') {
-          process.stdout.write(`🔧 ${block.name}\n`);
+          const label = formatToolName(block.name);
+          process.stdout.write(`\x1b[1m[MCP]\x1b[0m \x1b[1m[${label}]\x1b[0m\n`);
         }
       }
     } else if ('result' in message) {
