@@ -21,6 +21,10 @@ run = "npm run setup"
 description = "Run the standup agent via Notion MCP"
 run = "npm run standup"
 
+[tasks."standup:verbose"]
+description = "Run the standup agent with verbose Claude output"
+run = "VERBOSE=1 npm run standup"
+
 [tasks.start]
 description = "Start the scheduler"
 run = "npm start"

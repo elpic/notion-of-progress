@@ -11,7 +11,7 @@ import { runMcpStandupAgent } from '../src/adapters/mcp/McpStandupAgent';
 import { logger } from '../src/utils/logger';
 import { todayISO } from '../src/utils/dateHelpers';
 
-const verbose = process.argv.includes('--verbose') || process.argv.includes('-v');
+const verbose = process.argv.includes('--verbose') || process.argv.includes('-v') || process.env.VERBOSE === '1';
 
 logger.info(`Running MCP standup agent for ${todayISO()}`);
 

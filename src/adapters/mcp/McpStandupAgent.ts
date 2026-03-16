@@ -18,12 +18,23 @@ import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { NotionTaskRepository } from '../notion/NotionTaskRepository';
 import { ClaudeSummaryGenerator } from '../claude/ClaudeSummaryGenerator';
 
+const PAGE_ICONS = [
+  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
+  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
+  '🐉', '🎲', '🧩', '🌺', '⚙️', '🦅', '🎪', '🍉', '🔮', '🌍',
+];
+
+function randomIcon(): string {
+  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
+}
+
 // ─── Phase 3: write the standup page via MCP ─────────────────────────────────
 
 function buildWritePrompt(
   summary: StandupSummary,
   completed: TaskSummary[],
   active: TaskSummary[],
+  icon: string,
 ): string {
   const fmt = (bullets: Array<{ text: string; taskId?: string }>) =>
     bullets.length > 0
@@ -44,6 +55,7 @@ First, query the Standup Log DB to check if a page already exists with Date = "$
 
 PAGE PROPERTIES:
 - Title: "Standup · ${todayFormatted()}"
+- Icon: emoji "${icon}"
 - Date: ${todayISO()}
 - Status: "Generated"
 - Tasks Reviewed: ${completed.length + active.length}
@@ -75,11 +87,12 @@ async function writeStandupViaMcp(
   logger.info('Writing standup page via Notion MCP');
 
   let standupUrl = '';
+  const icon = randomIcon();
 
   if (verbose) process.stdout.write('\n');
 
   for await (const message of query({
-    prompt: buildWritePrompt(summary, completed, active),
+    prompt: buildWritePrompt(summary, completed, active, icon),
     options: {
       model: 'claude-opus-4-6',
       mcpServers: {
