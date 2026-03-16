@@ -73,11 +73,14 @@ function paragraph(content: string, italic = false): BlockRequest {
 export class NotionStandupRepository implements StandupRepository {
   async findTodayPageId(): Promise<string | null> {
     const notion = getNotionClient();
-    const response = await notion.databases.query({
-      database_id: config.notion.standupLogDbId,
-      filter: { property: 'Date', date: { equals: todayISO() } },
-      page_size: 1,
-    });
+    const response = await withRetry(
+      () => notion.databases.query({
+        database_id: config.notion.standupLogDbId,
+        filter: { property: 'Date', date: { equals: todayISO() } },
+        page_size: 1,
+      }),
+      { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit },
+    );
     return response.results[0]?.id ?? null;
   }
 
@@ -123,18 +126,35 @@ export class NotionStandupRepository implements StandupRepository {
     };
 
     if (existingPageId) {
-      // Clear existing blocks then append fresh content
-      const existingBlocks = await notion.blocks.children.list({ block_id: existingPageId });
-      await Promise.all(existingBlocks.results.map((b) => notion.blocks.delete({ block_id: b.id })));
+      // Paginate through all existing blocks and delete them
+      let cursor: string | undefined;
+      do {
+        const page = await withRetry(
+          () => notion.blocks.children.list({ block_id: existingPageId, start_cursor: cursor }),
+          { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit },
+        );
+        await Promise.all(
+          page.results.map((b) =>
+            withRetry(() => notion.blocks.delete({ block_id: b.id }), {
+              attempts: 3,
+              delayMs: 1000,
+              shouldRetry: isNotionRateLimit,
+            }),
+          ),
+        );
+        cursor = page.has_more ? page.next_cursor ?? undefined : undefined;
+      } while (cursor);
+
+      // Append blocks first — if this fails the old page is intact (no partial state)
+      await withRetry(
+        () => notion.blocks.children.append({ block_id: existingPageId, children }),
+        { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit },
+      );
 
       const response = await withRetry(
-        () => notion.pages.update({
-          page_id: existingPageId,
-          properties,
-        }),
-        { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit }
+        () => notion.pages.update({ page_id: existingPageId, properties }),
+        { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit },
       );
-      await notion.blocks.children.append({ block_id: existingPageId, children });
       if (!('url' in response)) throw new Error('Unexpected partial response from Notion');
       return response.url;
     }
