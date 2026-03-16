@@ -177,18 +177,21 @@ export class NotionStandupRepository implements StandupRepository {
     try {
       const notion = getNotionClient();
       const today = todayISO();
-      await notion.pages.create({
-        parent: { database_id: config.notion.standupLogDbId },
-        properties: {
-          Title: { title: [{ type: 'text', text: { content: `Standup — ${today} (Failed)` } }] },
-          Date: { date: { start: today } },
-          Status: { select: { name: 'Failed' } },
-          'Tasks Reviewed': { number: 0 },
-        },
-        children: [
-          callout('❌', `Standup generation failed: ${error}`, 'red_background'),
-        ],
-      });
+      await withRetry(
+        () => notion.pages.create({
+          parent: { database_id: config.notion.standupLogDbId },
+          properties: {
+            Title: { title: [{ type: 'text', text: { content: `Standup — ${today} (Failed)` } }] },
+            Date: { date: { start: today } },
+            Status: { select: { name: 'Failed' } },
+            'Tasks Reviewed': { number: 0 },
+          },
+          children: [
+            callout('❌', `Standup generation failed: ${error}`, 'red_background'),
+          ],
+        }),
+        { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit },
+      );
     } catch {
       // Best effort — don't throw if the failure page itself fails
     }
