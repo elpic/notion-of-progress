@@ -82,7 +82,7 @@ Generate the standup summary JSON.`;
     const message = await withRetry(
       () => this.client.messages.create({
         model: config.anthropic.model,
-        max_tokens: 512,
+        max_tokens: 2048,
         messages: [{ role: 'user', content: userPrompt }],
         system: SYSTEM_PROMPT,
       }),
