@@ -12,12 +12,13 @@ import { logger } from '../src/utils/logger';
 import { todayISO } from '../src/utils/dateHelpers';
 
 const verbose = process.argv.includes('--verbose') || process.argv.includes('-v') || process.env.VERBOSE === '1';
+const dryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
 
 logger.info(`Running MCP standup agent for ${todayISO()}`);
 
-runMcpStandupAgent({ verbose })
+runMcpStandupAgent({ verbose, dryRun })
   .then((url) => {
-    logger.info(`Standup written: ${url}`);
+    if (url) logger.info(`Standup written: ${url}`);
     logger.info('Done.');
   })
   .catch((err) => {

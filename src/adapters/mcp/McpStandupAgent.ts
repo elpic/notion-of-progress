@@ -148,8 +148,23 @@ async function writeStandupViaMcp(
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export async function runMcpStandupAgent({ verbose = false } = {}): Promise<string> {
-  logger.info('Starting Notion MCP standup agent');
+function printDryRun(summary: StandupSummary, completed: TaskSummary[], active: TaskSummary[]): void {
+  const b = '\x1b[1m';
+  const r = '\x1b[0m';
+  const fmt = (bullets: Array<{ text: string }>) =>
+    bullets.length > 0 ? bullets.map((b) => `  • ${b.text}`).join('\n') : '  • Nothing to report.';
+
+  process.stdout.write(`\n${b}─── Dry Run Preview ───────────────────────────────────────${r}\n\n`);
+  process.stdout.write(`${b}📊 Summary${r}  ${completed.length} completed · ${active.length} active · ${summary.blockers.length} blocker${summary.blockers.length !== 1 ? 's' : ''}\n\n`);
+  process.stdout.write(`${b}✅ Yesterday${r}\n${fmt(summary.yesterday)}\n\n`);
+  process.stdout.write(`${b}🔨 Today${r}\n${fmt(summary.today)}\n\n`);
+  process.stdout.write(`${b}🚧 Blockers${r}\n${fmt(summary.blockers)}\n\n`);
+  process.stdout.write(`${b}───────────────────────────────────────────────────────────${r}\n`);
+  process.stdout.write(`${b}[DRY RUN]${r} Nothing was written to Notion.\n\n`);
+}
+
+export async function runMcpStandupAgent({ verbose = false, dryRun = false } = {}): Promise<string> {
+  logger.info(`Starting Notion MCP standup agent${dryRun ? ' (dry run)' : ''}`);
 
   // Phase 1: fetch tasks via typed Notion client (reliable)
   logger.info('Fetching tasks');
@@ -161,6 +176,12 @@ export async function runMcpStandupAgent({ verbose = false } = {}): Promise<stri
   logger.info('Generating standup summary');
   const summarizer = new ClaudeSummaryGenerator();
   const summary: StandupSummary = await summarizer.generateSummary(completed, active);
+
+  // Phase 3: dry run — print and exit without writing
+  if (dryRun) {
+    printDryRun(summary, completed, active);
+    return '';
+  }
 
   // Phase 3: write the page autonomously via Notion MCP
   return writeStandupViaMcp(summary, completed, active, verbose);
