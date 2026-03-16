@@ -1,13 +1,15 @@
 /**
  * scripts/seed-week.ts
  *
- * Creates one realistic standup page per weekday of the current week
+ * Creates one realistic standup page per weekday of a given week
  * in the Standup Log DB, so the weekly digest agent has real data to read.
  *
  * Safe to run multiple times — skips days that already have a page.
  *
  * Usage:
- *   mise run seed-week
+ *   mise run seed-week                  # seed current week (up to today)
+ *   mise run seed-week -- --week -1     # seed last week (all 5 days)
+ *   mise run seed-week -- --week -2     # seed two weeks ago
  */
 
 import 'dotenv/config';
@@ -30,14 +32,26 @@ function randomIcon(): string {
   return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
 }
 
+// ─── CLI args ─────────────────────────────────────────────────────────────────
+
+function getWeekOffset(): number {
+  const idx = process.argv.indexOf('--week');
+  if (idx !== -1 && process.argv[idx + 1] !== undefined) {
+    const val = parseInt(process.argv[idx + 1], 10);
+    if (!isNaN(val)) return val;
+  }
+  return 0;
+}
+
 // ─── Week helpers ─────────────────────────────────────────────────────────────
 
-function getWeekdayDates(): Array<{ iso: string; label: string; dayName: string }> {
+function getWeekdayDates(weekOffset: number): Array<{ iso: string; label: string; dayName: string }> {
   const tz = process.env.TZ ?? 'America/New_York';
   const today = new Date();
   const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
   const monday = new Date(today);
-  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  // Move to this week's Monday, then apply week offset
+  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + weekOffset * 7);
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   return days.map((dayName, i) => {
@@ -237,16 +251,18 @@ async function seedDay(iso: string, label: string, dayName: string): Promise<voi
 }
 
 async function main(): Promise<void> {
-  logger.info('Seeding week standups for weekly digest demo...');
+  const weekOffset = getWeekOffset();
+  const weekLabel = weekOffset === 0 ? 'current week' : weekOffset === -1 ? 'last week' : `${Math.abs(weekOffset)} weeks ago`;
+  logger.info(`Seeding standup pages for ${weekLabel}...`);
 
-  const days = getWeekdayDates();
+  const days = getWeekdayDates(weekOffset);
   const today = new Date().toLocaleDateString('en-CA', {
     timeZone: process.env.TZ ?? 'America/New_York',
   });
 
   for (const { iso, label, dayName } of days) {
-    // Only seed days up to and including today
-    if (iso > today) {
+    // Only skip future dates when seeding the current week
+    if (weekOffset === 0 && iso > today) {
       logger.info(`  ${dayName} (${iso}) — future date, skipping`);
       continue;
     }

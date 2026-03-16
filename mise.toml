@@ -26,7 +26,7 @@ description = "Generate the weekly digest via Notion MCP (--verbose for live out
 run = "node_modules/.bin/tsx scripts/run-digest.ts"
 
 [tasks.seed-week]
-description = "Seed this week's standup pages into Notion (for testing the weekly digest)"
+description = "Seed standup pages into Notion (--week -1 for last week, --week -2 for two weeks ago)"
 run = "node_modules/.bin/tsx scripts/seed-week.ts"
 
 [tasks.start]
