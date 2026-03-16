@@ -18,12 +18,32 @@ import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { NotionTaskRepository } from '../notion/NotionTaskRepository';
 import { ClaudeSummaryGenerator } from '../claude/ClaudeSummaryGenerator';
 
+const PAGE_ICONS = [
+  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
+  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
+  '🐉', '🎲', '🧩', '🌺', '⚙️', '🦅', '🎪', '🍉', '🔮', '🌍',
+];
+
+function randomIcon(): string {
+  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
+}
+
 // ─── Phase 3: write the standup page via MCP ─────────────────────────────────
+
+/** Converts mcp__notion__API-patch-block-children → "Patch Block Children" */
+function formatToolName(raw: string): string {
+  return raw
+    .replace(/^mcp__\w+__/, '')
+    .replace(/^API-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 function buildWritePrompt(
   summary: StandupSummary,
   completed: TaskSummary[],
   active: TaskSummary[],
+  icon: string,
 ): string {
   const fmt = (bullets: Array<{ text: string; taskId?: string }>) =>
     bullets.length > 0
@@ -44,6 +64,7 @@ First, query the Standup Log DB to check if a page already exists with Date = "$
 
 PAGE PROPERTIES:
 - Title: "Standup · ${todayFormatted()}"
+- Icon: emoji "${icon}"
 - Date: ${todayISO()}
 - Status: "Generated"
 - Tasks Reviewed: ${completed.length + active.length}
@@ -70,13 +91,17 @@ async function writeStandupViaMcp(
   summary: StandupSummary,
   completed: TaskSummary[],
   active: TaskSummary[],
+  verbose: boolean,
 ): Promise<string> {
   logger.info('Writing standup page via Notion MCP');
 
   let standupUrl = '';
+  const icon = randomIcon();
+
+  if (verbose) process.stdout.write('\n');
 
   for await (const message of query({
-    prompt: buildWritePrompt(summary, completed, active),
+    prompt: buildWritePrompt(summary, completed, active, icon),
     options: {
       model: 'claude-opus-4-6',
       mcpServers: {
@@ -98,19 +123,21 @@ async function writeStandupViaMcp(
   })) {
     if (message.type === 'assistant' && Array.isArray(message.message?.content)) {
       for (const block of message.message.content) {
-        if (block.type === 'text' && block.text) {
-          logger.info(`[Claude] ${block.text.slice(0, 200)}`);
-        } else if (block.type === 'tool_use') {
-          logger.info(`[Tool call] ${block.name}`);
+        if (verbose && block.type === 'text' && block.text) {
+          process.stdout.write(`💭 \x1b[1m[Claude]\x1b[0m ${block.text.trim()}\n\n`);
+        } else if (verbose && block.type === 'tool_use') {
+          const action = formatToolName(block.name);
+          process.stdout.write(`🔧 \x1b[1m[MCP]\x1b[0m \x1b[1m[NOTION API]\x1b[0m ${action}\n`);
         }
       }
     } else if ('result' in message) {
       const result = message.result ?? '';
       const urlMatch = result.match(/https:\/\/www\.notion\.so\/[^\s)>\]"]+/);
       if (urlMatch) standupUrl = urlMatch[0];
-      logger.info(`[MCP result] ${result.slice(0, 200)}`);
     }
   }
+
+  if (verbose) process.stdout.write('\n');
 
   if (!standupUrl) {
     throw new Error('MCP agent completed but no standup URL was found in the output');
@@ -121,7 +148,7 @@ async function writeStandupViaMcp(
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export async function runMcpStandupAgent(): Promise<string> {
+export async function runMcpStandupAgent({ verbose = false } = {}): Promise<string> {
   logger.info('Starting Notion MCP standup agent');
 
   // Phase 1: fetch tasks via typed Notion client (reliable)
@@ -136,5 +163,5 @@ export async function runMcpStandupAgent(): Promise<string> {
   const summary: StandupSummary = await summarizer.generateSummary(completed, active);
 
   // Phase 3: write the page autonomously via Notion MCP
-  return writeStandupViaMcp(summary, completed, active);
+  return writeStandupViaMcp(summary, completed, active, verbose);
 }
