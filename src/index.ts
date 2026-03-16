@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { runMcpStandupAgent } from './adapters/mcp/McpStandupAgent';
+import { NotionStandupRepository } from './adapters/notion/NotionStandupRepository';
 import { config } from './config/index';
 import { logger } from './utils/logger';
 
@@ -19,6 +20,8 @@ cron.schedule(
       logger.info(`Standup written: ${url}`);
     } catch (err) {
       logger.error('Standup run failed', err);
+      const message = err instanceof Error ? err.message : String(err);
+      await new NotionStandupRepository().writeFailedStandup(message).catch(() => {});
     }
   },
   { timezone: config.scheduler.timezone }
