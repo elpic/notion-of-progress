@@ -21,6 +21,10 @@ run = "npm run setup"
 description = "Run the standup agent via Notion MCP (--verbose for live output, --dry-run to preview)"
 run = "node_modules/.bin/tsx scripts/run-mcp.ts"
 
+[tasks.digest]
+description = "Generate the weekly digest via Notion MCP (--verbose for live output, --dry-run to preview)"
+run = "node_modules/.bin/tsx scripts/run-digest.ts"
+
 [tasks.start]
-description = "Start the scheduler"
+description = "Start the scheduler (daily standups + Friday digest)"
 run = "npm start"

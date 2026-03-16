@@ -21,6 +21,7 @@ export const config = {
   },
   scheduler: {
     cronSchedule: process.env.CRON_SCHEDULE ?? '0 8 * * 1-5',
+    digestCronSchedule: process.env.DIGEST_CRON_SCHEDULE ?? '0 17 * * 5',
     timezone: process.env.TZ ?? 'America/New_York',
   },
   discord: {
