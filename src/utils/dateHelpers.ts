@@ -16,12 +16,17 @@ export function yesterdayISO(): string {
   return localDateISO(d);
 }
 
+function localMidnightISO(dateISO: string): string {
+  // Parse as local time (no Z suffix) so midnight is correct in the configured TZ
+  return new Date(`${dateISO}T00:00:00`).toISOString();
+}
+
 export function startOfYesterday(): string {
-  return `${yesterdayISO()}T00:00:00.000Z`;
+  return localMidnightISO(yesterdayISO());
 }
 
 export function startOfToday(): string {
-  return `${todayISO()}T00:00:00.000Z`;
+  return localMidnightISO(todayISO());
 }
 
 export function todayFormatted(): string {
