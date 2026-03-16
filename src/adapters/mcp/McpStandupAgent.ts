@@ -97,6 +97,7 @@ async function writeStandupViaMcp(
   logger.info('Writing standup page via Notion MCP');
 
   let standupUrl = '';
+  let lastResult = '';
   const icon = randomIcon();
 
   if (verbose) process.stdout.write('\n');
@@ -132,7 +133,8 @@ async function writeStandupViaMcp(
         }
       }
     } else if ('result' in message) {
-      const result = message.result ?? '';
+      const result = typeof message.result === 'string' ? message.result : '';
+      lastResult = result;
       const urlMatch = result.match(/https:\/\/www\.notion\.so\/[^\s)>\]"]+/);
       if (urlMatch) standupUrl = urlMatch[0];
     }
@@ -141,6 +143,7 @@ async function writeStandupViaMcp(
   if (verbose) process.stdout.write('\n');
 
   if (!standupUrl) {
+    logger.warn(`MCP agent completed but no URL found. Raw result: ${lastResult.slice(0, 500)}`);
     throw new Error('MCP agent completed but no standup URL was found in the output');
   }
 
