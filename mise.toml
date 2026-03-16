@@ -25,6 +25,10 @@ run = "node_modules/.bin/tsx scripts/run-mcp.ts"
 description = "Generate the weekly digest via Notion MCP (--verbose for live output, --dry-run to preview)"
 run = "node_modules/.bin/tsx scripts/run-digest.ts"
 
+[tasks.seed-week]
+description = "Seed this week's standup pages into Notion (for testing the weekly digest)"
+run = "node_modules/.bin/tsx scripts/seed-week.ts"
+
 [tasks.start]
 description = "Start the scheduler (daily standups + Friday digest)"
 run = "npm start"
