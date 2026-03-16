@@ -18,7 +18,7 @@ description = "Create Notion databases and configure .env"
 run = "npm run setup"
 
 [tasks.standup]
-description = "Run the standup agent via Notion MCP (use --verbose for live output)"
+description = "Run the standup agent via Notion MCP (--verbose for live output, --dry-run to preview)"
 run = "node_modules/.bin/tsx scripts/run-mcp.ts"
 
 [tasks.start]
