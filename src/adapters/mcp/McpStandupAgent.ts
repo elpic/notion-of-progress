@@ -17,6 +17,7 @@ import { logger } from '../../utils/logger';
 import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { NotionTaskRepository } from '../notion/NotionTaskRepository';
 import { ClaudeSummaryGenerator } from '../claude/ClaudeSummaryGenerator';
+import { notifyDiscord } from '../discord/DiscordNotifier';
 
 const PAGE_ICONS = [
   '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
@@ -184,5 +185,10 @@ export async function runMcpStandupAgent({ verbose = false, dryRun = false } = {
   }
 
   // Phase 3: write the page autonomously via Notion MCP
-  return writeStandupViaMcp(summary, completed, active, verbose);
+  const url = await writeStandupViaMcp(summary, completed, active, verbose);
+
+  // Phase 4: notify Discord (optional — skipped if DISCORD_WEBHOOK_URL not set)
+  await notifyDiscord(summary, url, todayFormatted());
+
+  return url;
 }

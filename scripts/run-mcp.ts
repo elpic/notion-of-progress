@@ -14,6 +14,15 @@ import { todayISO } from '../src/utils/dateHelpers';
 const verbose = process.argv.includes('--verbose') || process.argv.includes('-v') || process.env.VERBOSE === '1';
 const dryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
 
+if (verbose) {
+  const mask = (val: string | undefined) => val ? `${val.slice(0, 8)}...${val.slice(-4)}` : 'NOT SET';
+  logger.info('Environment:');
+  logger.info(`  ANTHROPIC_API_KEY  = ${mask(process.env.ANTHROPIC_API_KEY)}`);
+  logger.info(`  NOTION_API_KEY     = ${mask(process.env.NOTION_API_KEY)}`);
+  logger.info(`  NOTION_TASK_DB_ID  = ${process.env.NOTION_TASK_DB_ID ?? 'NOT SET'}`);
+  logger.info(`  NOTION_STANDUP_LOG_DB_ID = ${process.env.NOTION_STANDUP_LOG_DB_ID ?? 'NOT SET'}`);
+}
+
 logger.info(`Running MCP standup agent for ${todayISO()}`);
 
 runMcpStandupAgent({ verbose, dryRun })

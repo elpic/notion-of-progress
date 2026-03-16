@@ -23,4 +23,7 @@ export const config = {
     cronSchedule: process.env.CRON_SCHEDULE ?? '0 8 * * 1-5',
     timezone: process.env.TZ ?? 'America/New_York',
   },
+  discord: {
+    webhookUrl: process.env.DISCORD_WEBHOOK_URL ?? null,
+  },
 };
