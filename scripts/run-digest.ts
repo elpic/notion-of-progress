@@ -17,6 +17,11 @@ import { logger } from '../src/utils/logger';
 const verbose = process.argv.includes('--verbose') || process.argv.includes('-v') || process.env.VERBOSE === '1';
 const dryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
 
+const weekIdx = process.argv.indexOf('--week');
+const weekOffset = weekIdx !== -1 && process.argv[weekIdx + 1] !== undefined
+  ? parseInt(process.argv[weekIdx + 1], 10) || 0
+  : 0;
+
 if (verbose) {
   const mask = (val: string | undefined) => val ? `${val.slice(0, 8)}...${val.slice(-4)}` : 'NOT SET';
   logger.info('Environment:');
@@ -27,7 +32,7 @@ if (verbose) {
 
 logger.info('Running weekly digest agent');
 
-runMcpDigestAgent({ verbose, dryRun })
+runMcpDigestAgent({ verbose, dryRun, weekOffset })
   .then((url) => {
     if (url) logger.info(`Digest written: ${url}`);
     logger.info('Done.');

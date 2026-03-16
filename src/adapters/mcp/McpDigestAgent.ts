@@ -23,11 +23,11 @@ function randomIcon(): string {
   return DIGEST_ICONS[Math.floor(Math.random() * DIGEST_ICONS.length)];
 }
 
-function weekRange(): { start: string; end: string; label: string } {
+function weekRange(weekOffset = 0): { start: string; end: string; label: string } {
   const today = new Date();
   const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri
   const monday = new Date(today);
-  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + weekOffset * 7);
   const friday = new Date(monday);
   friday.setDate(monday.getDate() + 4);
 
@@ -47,8 +47,8 @@ function weekRange(): { start: string; end: string; label: string } {
   };
 }
 
-function buildDigestPrompt(icon: string): string {
-  const { start, end, label } = weekRange();
+function buildDigestPrompt(icon: string, weekOffset: number): string {
+  const { start, end, label } = weekRange(weekOffset);
   const today = todayISO();
 
   return `You are writing a weekly digest page in Notion. Today is ${today}.
@@ -91,12 +91,11 @@ PAGE CONTENT (use these exact blocks in order):
 When done, output the URL of the digest page.`;
 }
 
-export async function runMcpDigestAgent({ verbose = false, dryRun = false } = {}): Promise<string> {
-  const { label } = weekRange();
+export async function runMcpDigestAgent({ verbose = false, dryRun = false, weekOffset = 0 } = {}): Promise<string> {
+  const { label, start, end } = weekRange(weekOffset);
   logger.info(`Starting weekly digest agent for week of ${label}${dryRun ? ' (dry run)' : ''}`);
 
   if (dryRun) {
-    const { start, end } = weekRange();
     process.stdout.write(`\n\x1b[1m─── Dry Run Preview ───────────────────────────────────────\x1b[0m\n\n`);
     process.stdout.write(`\x1b[1m📅 Weekly Digest\x1b[0m  Week of ${label}\n`);
     process.stdout.write(`  Would read standup pages from ${start} to ${end}\n`);
@@ -113,7 +112,7 @@ export async function runMcpDigestAgent({ verbose = false, dryRun = false } = {}
   if (verbose) process.stdout.write('\n');
 
   for await (const message of query({
-    prompt: buildDigestPrompt(icon),
+    prompt: buildDigestPrompt(icon, weekOffset),
     options: {
       model: 'claude-opus-4-6',
       mcpServers: {
