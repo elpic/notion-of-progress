@@ -2,9 +2,19 @@ import { config } from '../../config/index';
 import { logger } from '../../utils/logger';
 import type { StandupSummary } from '../../core/domain/types';
 
+const DISCORD_FIELD_LIMIT = 1024;
+
+function truncate(value: string): string {
+  return value.length > DISCORD_FIELD_LIMIT
+    ? value.slice(0, DISCORD_FIELD_LIMIT - 1) + '…'
+    : value;
+}
+
 function buildMessage(summary: StandupSummary, url: string, date: string): object {
   const fmt = (bullets: Array<{ text: string }>) =>
-    bullets.length > 0 ? bullets.map((b) => `• ${b.text}`).join('\n') : '• Nothing to report.';
+    truncate(
+      bullets.length > 0 ? bullets.map((b) => `• ${b.text}`).join('\n') : '• Nothing to report.',
+    );
 
   return {
     embeds: [
