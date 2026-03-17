@@ -13,15 +13,8 @@ import { query } from '@anthropic-ai/claude-agent-sdk';
 import { config } from '../../config/index';
 import { todayISO } from '../../utils/dateHelpers';
 import { logger } from '../../utils/logger';
+import { randomDigestIcon } from '../../utils/icons';
 import { notifyDiscord } from '../discord/DiscordNotifier';
-
-const DIGEST_ICONS = [
-  '📅', '📊', '🗓️', '📋', '🔭', '🧭', '📈', '🏁', '🎯', '🌟',
-];
-
-function randomIcon(): string {
-  return DIGEST_ICONS[Math.floor(Math.random() * DIGEST_ICONS.length)];
-}
 
 function weekRange(weekOffset = 0): { start: string; end: string; label: string } {
   const today = new Date();
@@ -105,7 +98,7 @@ export async function runMcpDigestAgent({ verbose = false, dryRun = false, weekO
     return '';
   }
 
-  const icon = randomIcon();
+  const icon = randomDigestIcon();
   let digestUrl = '';
   let lastResult = '';
 

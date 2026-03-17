@@ -16,21 +16,13 @@ import 'dotenv/config';
 import { Client } from '@notionhq/client';
 import { config } from '../src/config/index';
 import { logger } from '../src/utils/logger';
+import { randomIcon } from '../src/utils/icons';
 
 type ApiColor = 'default' | 'gray' | 'brown' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'red'
   | 'default_background' | 'gray_background' | 'brown_background' | 'orange_background' | 'yellow_background'
   | 'green_background' | 'blue_background' | 'purple_background' | 'pink_background' | 'red_background';
 
 const notion = new Client({ auth: config.notion.apiKey });
-
-const PAGE_ICONS = [
-  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
-  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
-];
-
-function randomIcon(): string {
-  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
-}
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
 

@@ -4,6 +4,7 @@ import { getNotionClient } from '../../notion/client';
 import { config } from '../../config/index';
 import { todayISO, todayFormatted } from '../../utils/dateHelpers';
 import { withRetry, isNotionRateLimit } from '../../utils/retry';
+import { randomIcon } from '../../utils/icons';
 import type { Client } from '@notionhq/client';
 
 type CreatePageParams = Parameters<Client['pages']['create']>[0];
@@ -12,16 +13,6 @@ type RichText = Extract<BlockRequest, { type?: 'paragraph' }>['paragraph']['rich
 type ApiColor = 'default' | 'gray' | 'brown' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'red'
   | 'default_background' | 'gray_background' | 'brown_background' | 'orange_background' | 'yellow_background'
   | 'green_background' | 'blue_background' | 'purple_background' | 'pink_background' | 'red_background';
-
-const PAGE_ICONS = [
-  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
-  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
-  '🐉', '🎲', '🧩', '🌺', '⚙️', '🦅', '🎪', '🍉', '🔮', '🌍',
-];
-
-function randomIcon(): string {
-  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
-}
 
 function richText(content: string, url?: string, opts: { italic?: boolean; color?: ApiColor } = {}): RichText {
   return {

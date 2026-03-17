@@ -14,20 +14,11 @@ import { query } from '@anthropic-ai/claude-agent-sdk';
 import { config } from '../../config/index';
 import { todayISO, todayFormatted, yesterdayISO } from '../../utils/dateHelpers';
 import { logger } from '../../utils/logger';
+import { randomIcon } from '../../utils/icons';
 import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { NotionTaskRepository } from '../notion/NotionTaskRepository';
 import { ClaudeSummaryGenerator } from '../claude/ClaudeSummaryGenerator';
 import { notifyDiscord } from '../discord/DiscordNotifier';
-
-const PAGE_ICONS = [
-  '🌅', '☀️', '⚡', '🧠', '🚀', '🎯', '🔥', '💡', '🌿', '🛠️',
-  '🌊', '🎸', '🦋', '🌈', '🍀', '🏔️', '🎨', '🦁', '🌙', '✨',
-  '🐉', '🎲', '🧩', '🌺', '⚙️', '🦅', '🎪', '🍉', '🔮', '🌍',
-];
-
-function randomIcon(): string {
-  return PAGE_ICONS[Math.floor(Math.random() * PAGE_ICONS.length)];
-}
 
 // ─── Phase 3: write the standup page via MCP ─────────────────────────────────
 
