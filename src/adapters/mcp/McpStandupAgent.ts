@@ -13,7 +13,7 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { config } from '../../config/index';
 import { todayISO, todayFormatted, yesterdayISO } from '../../utils/dateHelpers';
-import { logger } from '../../utils/logger';
+import { createRunLogger } from '../../utils/logger';
 import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { NotionTaskRepository } from '../notion/NotionTaskRepository';
 import { ClaudeSummaryGenerator } from '../claude/ClaudeSummaryGenerator';
@@ -88,11 +88,14 @@ ${fmt(summary.blockers)}
 When done, output the URL of the standup page.`;
 }
 
+type RunLogger = ReturnType<typeof createRunLogger>;
+
 async function writeStandupViaMcp(
   summary: StandupSummary,
   completed: TaskSummary[],
   active: TaskSummary[],
   verbose: boolean,
+  logger: RunLogger,
 ): Promise<string> {
   logger.info('Writing standup page via Notion MCP');
 
@@ -168,6 +171,7 @@ function printDryRun(summary: StandupSummary, completed: TaskSummary[], active: 
 }
 
 export async function runMcpStandupAgent({ verbose = false, dryRun = false } = {}): Promise<string> {
+  const logger = createRunLogger();
   logger.info(`Starting Notion MCP standup agent${dryRun ? ' (dry run)' : ''}`);
 
   // Phase 1: fetch tasks via typed Notion client (reliable)
@@ -188,7 +192,7 @@ export async function runMcpStandupAgent({ verbose = false, dryRun = false } = {
   }
 
   // Phase 3: write the page autonomously via Notion MCP
-  const url = await writeStandupViaMcp(summary, completed, active, verbose);
+  const url = await writeStandupViaMcp(summary, completed, active, verbose, logger);
 
   // Phase 4: notify Discord (optional — skipped if DISCORD_WEBHOOK_URL not set)
   await notifyDiscord(summary, url, todayFormatted());
