@@ -6,7 +6,7 @@
 
 ---
 
-[![Watch the demo](https://img.youtube.com/vi/nzLENOTIKyA/maxresdefault.jpg)](https://youtu.be/nzLENOTIKyA)
+[![Watch the demo](https://img.youtube.com/vi/36WeQq2UOaA/maxresdefault.jpg)](https://www.youtube.com/watch?v=36WeQq2UOaA)
 
 ---
 
