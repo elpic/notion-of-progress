@@ -173,16 +173,26 @@ async function main() {
   const existingStandupDbId = process.env.NOTION_STANDUP_LOG_DB_ID;
   const existingSystemStatusDbId = process.env.NOTION_SYSTEM_STATUS_DB_ID;
 
-  if (existingTaskDbId && existingStandupDbId && existingSystemStatusDbId) {
+  if (existingTaskDbId && existingStandupDbId) {
     console.log('Database IDs found in .env — validating existing databases...\n');
     await validateDB(existingTaskDbId, 'Task DB', ['Name', 'Status', 'Priority', 'Due Date']);
     await validateDB(existingStandupDbId, 'Standup Log', ['Title', 'Date', 'Status', 'Tasks Reviewed']);
-    await validateDB(existingSystemStatusDbId, 'System Status', ['Title', 'Last Run', 'Status', 'Total Standups']);
+    
+    if (existingSystemStatusDbId) {
+      await validateDB(existingSystemStatusDbId, 'System Status', ['Title', 'Last Run', 'Status', 'Total Standups']);
+    } else {
+      console.log('\n📊 System Status dashboard not found. Run this setup again to add the live monitoring dashboard!\n');
+    }
+    
     console.log('\n✅ All good! Run npm run standup to generate your first standup.\n');
     return;
   }
 
-  console.log('No database IDs found — creating databases from scratch.\n');
+  console.log('Missing database IDs — creating new databases.\n');
+  console.log('🚀 This will create 3 Notion databases:');
+  console.log('  • Task DB — Your daily tasks and projects');
+  console.log('  • Standup Log — Generated standup summaries');
+  console.log('  • System Status — Live monitoring dashboard (NEW!)\n');
   console.log('Before continuing, make sure you have:');
   console.log('  1. Created an empty page in Notion (e.g. "Notion of Progress")');
   console.log('  2. Connected your integration to it: ··· → Connections → <your integration>\n');
@@ -221,6 +231,8 @@ async function main() {
   Task DB:        https://www.notion.so/${taskDbId.replace(/-/g, '')}
   Standup Log:    https://www.notion.so/${standupLogDbId.replace(/-/g, '')}
   System Status:  https://www.notion.so/${systemStatusDbId.replace(/-/g, '')}
+
+  📊 The System Status page will show your system's live operational status!
 
   DB IDs have been saved to your .env automatically.
 

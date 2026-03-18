@@ -46,6 +46,11 @@ export async function updateSystemStatus(
   status: SystemStatus,
   error?: string
 ): Promise<string> {
+  // Skip if System Status database is not configured
+  if (!config.notion.systemStatusDbId) {
+    return ''; // Silently skip - not an error
+  }
+
   const notion = getNotionClient();
   
   // Find today's status page (or create if none exists)
@@ -102,6 +107,8 @@ export async function updateSystemStatus(
 }
 
 async function findTodayStatusPageId(): Promise<string | null> {
+  if (!config.notion.systemStatusDbId) return null;
+  
   const notion = getNotionClient();
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -135,6 +142,8 @@ interface StatusPageData {
 }
 
 async function createStatusPage(data: StatusPageData): Promise<string> {
+  if (!config.notion.systemStatusDbId) throw new Error('System Status DB ID not configured');
+  
   const notion = getNotionClient();
   
   const response = await notion.pages.create({
