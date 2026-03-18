@@ -173,71 +173,121 @@ async function main() {
   const existingStandupDbId = process.env.NOTION_STANDUP_LOG_DB_ID;
   const existingSystemStatusDbId = process.env.NOTION_SYSTEM_STATUS_DB_ID;
 
-  if (existingTaskDbId && existingStandupDbId) {
-    console.log('Database IDs found in .env — validating existing databases...\n');
+  // Validate existing databases
+  if (existingTaskDbId) {
+    console.log('Validating Task DB...');
     await validateDB(existingTaskDbId, 'Task DB', ['Name', 'Status', 'Priority', 'Due Date']);
+  }
+  
+  if (existingStandupDbId) {
+    console.log('Validating Standup Log...');
     await validateDB(existingStandupDbId, 'Standup Log', ['Title', 'Date', 'Status', 'Tasks Reviewed']);
-    
-    if (existingSystemStatusDbId) {
-      await validateDB(existingSystemStatusDbId, 'System Status', ['Title', 'Last Run', 'Status', 'Total Standups']);
-    } else {
-      console.log('\n📊 System Status dashboard not found. Run this setup again to add the live monitoring dashboard!\n');
-    }
-    
-    console.log('\n✅ All good! Run npm run standup to generate your first standup.\n');
+  }
+  
+  if (existingSystemStatusDbId) {
+    console.log('Validating System Status...');
+    await validateDB(existingSystemStatusDbId, 'System Status', ['Title', 'Last Run', 'Status', 'Total Standups']);
+  }
+  
+  // Check what needs to be created
+  const needsTask = !existingTaskDbId;
+  const needsStandup = !existingStandupDbId;
+  const needsStatus = !existingSystemStatusDbId;
+  
+  if (!needsTask && !needsStandup && !needsStatus) {
+    console.log('\n✅ All databases exist and are valid! Run npm run standup to generate your first standup.\n');
     return;
   }
 
-  console.log('Missing database IDs — creating new databases.\n');
-  console.log('🚀 This will create 3 Notion databases:');
-  console.log('  • Task DB — Your daily tasks and projects');
-  console.log('  • Standup Log — Generated standup summaries');
-  console.log('  • System Status — Live monitoring dashboard (NEW!)\n');
-  console.log('Before continuing, make sure you have:');
-  console.log('  1. Created an empty page in Notion (e.g. "Notion of Progress")');
-  console.log('  2. Connected your integration to it: ··· → Connections → <your integration>\n');
+  // Show what needs to be created
+  console.log('\n🚀 Creating missing databases:');
+  if (needsTask) console.log('  • Task DB — Your daily tasks and projects');
+  if (needsStandup) console.log('  • Standup Log — Generated standup summaries');
+  if (needsStatus) console.log('  • System Status — Live monitoring dashboard');
+  console.log('');
 
-  const pageUrl = await prompt('Paste the URL of that Notion page: ');
+  // Get parent page (either from existing setup or user input)
   let parentPageId: string;
+  
+  if (existingTaskDbId) {
+    // If we have an existing Task DB, get its parent page
+    try {
+      const taskDb = await notion.databases.retrieve({ database_id: existingTaskDbId }) as any;
+      parentPageId = taskDb.parent?.type === 'page_id' ? taskDb.parent.page_id : '';
+      if (!parentPageId) throw new Error('Could not find parent page from existing Task DB');
+      console.log('Using parent page from existing Task DB ✓\n');
+    } catch {
+      console.error('❌ Could not find parent page from existing databases. Please provide the page URL.');
+      const pageUrl = await prompt('Paste the URL of your Notion parent page: ');
+      parentPageId = extractPageId(pageUrl);
+    }
+  } else {
+    // New setup - ask for parent page
+    console.log('Before continuing, make sure you have:');
+    console.log('  1. Created an empty page in Notion (e.g. "Notion of Progress")');
+    console.log('  2. Connected your integration to it: ··· → Connections → <your integration>\n');
 
-  try {
-    parentPageId = extractPageId(pageUrl);
-  } catch (e) {
-    console.error(`\n❌ ${(e as Error).message}`);
-    process.exit(1);
+    const pageUrl = await prompt('Paste the URL of that Notion page: ');
+    try {
+      parentPageId = extractPageId(pageUrl);
+    } catch (e) {
+      console.error(`\n❌ ${(e as Error).message}`);
+      process.exit(1);
+    }
   }
 
   // Verify we can access the page
   try {
     await notion.pages.retrieve({ page_id: parentPageId });
-    console.log('\n  Page found ✓\n');
+    console.log('  Page found ✓\n');
   } catch {
     console.error('\n❌ Could not access that page. Make sure you connected your integration to it.\n');
     process.exit(1);
   }
 
-  const taskDbId = await createTaskDB(parentPageId);
-  const standupLogDbId = await createStandupLogDB(parentPageId);
-  const systemStatusDbId = await createSystemStatusDB(parentPageId);
+  // Create only missing databases
+  let taskDbId: string = existingTaskDbId || '';
+  let standupLogDbId: string = existingStandupDbId || '';
+  let systemStatusDbId: string = existingSystemStatusDbId || '';
 
+  if (needsTask) {
+    taskDbId = await createTaskDB(parentPageId);
+  }
+  
+  if (needsStandup) {
+    standupLogDbId = await createStandupLogDB(parentPageId);
+  }
+  
+  if (needsStatus) {
+    systemStatusDbId = await createSystemStatusDB(parentPageId);
+  }
+
+  // Update .env with any new IDs
   console.log('\n  Writing DB IDs to .env...');
-  updateEnv('NOTION_TASK_DB_ID', taskDbId);
-  updateEnv('NOTION_STANDUP_LOG_DB_ID', standupLogDbId);
-  updateEnv('NOTION_SYSTEM_STATUS_DB_ID', systemStatusDbId);
+  if (needsTask) updateEnv('NOTION_TASK_DB_ID', taskDbId);
+  if (needsStandup) updateEnv('NOTION_STANDUP_LOG_DB_ID', standupLogDbId);
+  if (needsStatus) updateEnv('NOTION_SYSTEM_STATUS_DB_ID', systemStatusDbId);
 
-  console.log(`
-✅ Setup complete!
+  console.log('\n✅ Setup complete!');
+  console.log('\n  Database URLs:');
+  
+  if (taskDbId) {
+    console.log(`  Task DB:        https://www.notion.so/${taskDbId.replace(/-/g, '')}`);
+  }
+  if (standupLogDbId) {
+    console.log(`  Standup Log:    https://www.notion.so/${standupLogDbId.replace(/-/g, '')}`);
+  }
+  if (systemStatusDbId) {
+    console.log(`  System Status:  https://www.notion.so/${systemStatusDbId.replace(/-/g, '')}`);
+  }
 
-  Task DB:        https://www.notion.so/${taskDbId.replace(/-/g, '')}
-  Standup Log:    https://www.notion.so/${standupLogDbId.replace(/-/g, '')}
-  System Status:  https://www.notion.so/${systemStatusDbId.replace(/-/g, '')}
+  if (needsStatus) {
+    console.log('\n  📊 The System Status page will show your system\'s live operational status!');
+  }
 
-  📊 The System Status page will show your system's live operational status!
-
-  DB IDs have been saved to your .env automatically.
-
-  Run: npm run standup
-`);
+  console.log('\n  DB IDs have been saved to your .env automatically.');
+  console.log('\n  Run: npm run standup');
+  console.log('');
 }
 
 main().catch((err) => {
