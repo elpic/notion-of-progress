@@ -31,7 +31,7 @@ jobs:
         uses: jdx/mise-action@v2
 
       - name: Install dependencies
-        run: npm ci
+        run: mise run install
 
       - name: Run TypeScript type check
         run: mise run typecheck
