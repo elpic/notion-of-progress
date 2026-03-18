@@ -36,6 +36,14 @@ jobs:
       - name: Run TypeScript type check
         run: mise run typecheck
 
+      - name: Evolve project tasks
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            mise run evolve-tasks -- --dry-run
+          else
+            mise run evolve-tasks
+          fi
+
       - name: Generate daily standup
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then

@@ -9,6 +9,7 @@
     "standup": "tsx scripts/run-mcp.ts",
     "setup": "tsx scripts/setup.ts",
     "digest": "tsx scripts/run-digest.ts",
+    "evolve-tasks": "tsx scripts/evolve-tasks.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
