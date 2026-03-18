@@ -1,4 +1,4 @@
-import type { TaskRepository } from '../../core/ports/TaskRepository';
+import type { TaskRepository, CreateTaskRequest } from '../../core/ports/TaskRepository';
 import type { TaskSummary } from '../../core/domain/types';
 import { getNotionClient } from '../../notion/client';
 import { config } from '../../config/index';
@@ -84,5 +84,89 @@ export class NotionTaskRepository implements TaskRepository {
     ]);
 
     return { completed, active };
+  }
+
+  async createTask(taskRequest: CreateTaskRequest): Promise<TaskSummary> {
+    const notion = getNotionClient();
+    
+    const properties: any = {
+      [config.notion.taskTitleProperty]: {
+        title: [
+          {
+            text: {
+              content: taskRequest.title,
+            },
+          },
+        ],
+      },
+      [config.notion.taskStatusProperty]: {
+        status: {
+          name: taskRequest.status,
+        },
+      },
+    };
+
+    // Add priority if provided
+    if (taskRequest.priority) {
+      properties.Priority = {
+        select: {
+          name: taskRequest.priority,
+        },
+      };
+    }
+
+    // Add due date if provided
+    if (taskRequest.dueDate) {
+      properties['Due Date'] = {
+        date: {
+          start: taskRequest.dueDate,
+        },
+      };
+    }
+
+    // Add notes if provided
+    if (taskRequest.notes) {
+      properties.Notes = {
+        rich_text: [
+          {
+            text: {
+              content: taskRequest.notes,
+            },
+          },
+        ],
+      };
+    }
+
+    const response = await withRetry(
+      () => notion.pages.create({
+        parent: { database_id: config.notion.taskDbId },
+        properties,
+      }),
+      { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit }
+    );
+
+    if (response.object === 'page' && 'properties' in response) {
+      return toTaskSummary(response as PageObjectResponse);
+    }
+
+    throw new Error('Failed to create task');
+  }
+
+  async updateTaskStatus(taskId: string, newStatus: string): Promise<void> {
+    const notion = getNotionClient();
+    
+    await withRetry(
+      () => notion.pages.update({
+        page_id: taskId,
+        properties: {
+          [config.notion.taskStatusProperty]: {
+            status: {
+              name: newStatus,
+            },
+          },
+        },
+      }),
+      { attempts: 3, delayMs: 1000, shouldRetry: isNotionRateLimit }
+    );
   }
 }
