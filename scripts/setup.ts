@@ -29,8 +29,7 @@ import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
 import { Client } from '@notionhq/client';
 
-// Import existing functionality from the current setup-notion script
-import '../scripts/setup-notion.js';
+// We'll call the existing setup-notion script via subprocess to avoid import complexity
 
 // Dashboard icons for status pages
 const DASHBOARD_ICONS = ['🚀', '💻', '⚡', '🔧', '📊', '🤖', '⚙️', '💡', '🎯', '🔥'] as const;
@@ -130,6 +129,8 @@ async function checkGitHubCLI(): Promise<boolean> {
   try {
     const { execSync } = await import('child_process');
     execSync('gh --version', { stdio: 'ignore' });
+    // Check if authenticated
+    execSync('gh auth status', { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -177,8 +178,11 @@ async function setSecretsViaGitHubCLI(secrets: SecretConfig[]): Promise<boolean>
       }
 
       try {
-        execSync(`gh secret set ${secret.name} --body "${secret.value}"`, { 
-          stdio: 'pipe' 
+        // Use stdin to avoid command injection via secret values
+        execSync(`gh secret set ${secret.name}`, {
+          input: secret.value,
+          stdio: ['pipe', 'pipe', 'pipe'],
+          encoding: 'utf8'
         });
         console.log(`  ✅ ${secret.name}`);
       } catch (error) {
@@ -219,11 +223,11 @@ function printManualSecretsInstructions(secrets: SecretConfig[], repoInfo: { own
   
   for (const secret of secrets) {
     if (secret.value) {
-      console.log(`gh secret set ${secret.name} --body "${secret.value}"`);
+      console.log(`echo "***" | gh secret set ${secret.name}`);
     } else if (secret.required) {
       console.log(`# ${secret.name} - MISSING FROM .env`);
     } else {
-      console.log(`# gh secret set ${secret.name} --body "your_value_here"  # Optional`);
+      console.log(`# echo "your_value_here" | gh secret set ${secret.name}  # Optional`);
     }
   }
 }
@@ -288,9 +292,12 @@ async function setupGitHubSecrets(): Promise<void> {
       printManualSecretsInstructions(secrets, repoInfo);
     }
   } else {
-    console.log('\n📖 GitHub CLI not found. Manual setup required for automated deployment:');
+    console.log('\n📖 GitHub CLI not available. Manual setup required for automated deployment:');
     printManualSecretsInstructions(secrets, repoInfo);
-    console.log('\n💡 Install GitHub CLI: brew install gh (macOS) or npm install -g @github/cli');
+    console.log('\n💡 Setup GitHub CLI:');
+    console.log('   1. Install: brew install gh (macOS) or npm install -g @github/cli');
+    console.log('   2. Authenticate: gh auth login');
+    console.log('   3. Re-run setup to configure secrets automatically');
   }
 }
 
