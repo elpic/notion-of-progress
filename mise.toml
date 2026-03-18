@@ -13,6 +13,14 @@ run = "npm run typecheck"
 description = "Run tests"
 run = "npm test"
 
+[tasks."test:coverage"]
+description = "Run tests with coverage report"
+run = "npm run test:coverage"
+
+[tasks."test:watch"]
+description = "Run tests in watch mode"
+run = "npm run test:watch"
+
 [tasks.setup]
 description = "Create Notion databases and configure .env"
 run = "npm run setup"
