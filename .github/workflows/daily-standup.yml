@@ -1,0 +1,67 @@
+name: Daily Standup Automation
+
+on:
+  schedule:
+    # Run at 8 AM EST (13:00 UTC) on weekdays
+    - cron: '0 13 * * 1-5'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: 'Run with verbose output'
+        required: false
+        default: 'false'
+        type: boolean
+      dry_run:
+        description: 'Run in dry-run mode (no writes to Notion)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  standup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Run TypeScript type check
+        run: mise run typecheck
+
+      - name: Generate daily standup
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            mise run standup -- --dry-run
+          elif [ "${{ github.event.inputs.verbose }}" = "true" ]; then
+            mise run standup -- --verbose
+          else
+            mise run standup
+          fi
+        env:
+          # Required environment variables
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_TASK_DB_ID: ${{ secrets.NOTION_TASK_DB_ID }}
+          NOTION_STANDUP_LOG_DB_ID: ${{ secrets.NOTION_STANDUP_LOG_DB_ID }}
+          NOTION_SYSTEM_STATUS_DB_ID: ${{ secrets.NOTION_SYSTEM_STATUS_DB_ID }}
+          
+          # Optional environment variables with defaults
+          TZ: 'America/New_York'
+          TASK_STATUS_PROPERTY: 'Status'
+          TASK_DONE_VALUE: 'Done'
+          TASK_TITLE_PROPERTY: 'Name'
+          
+          # Optional integrations
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Report status on failure
+        if: failure()
+        run: |
+          echo "::error::Daily standup generation failed"
+          echo "::error::Check the logs above for details"
+          echo "::error::The system will attempt to write a failure status to Notion"
