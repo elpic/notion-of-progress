@@ -45,17 +45,51 @@ function toBullets(items: unknown[]): StandupBullet[] {
   });
 }
 
+/**
+ * Safely parses standup JSON from Claude's response with comprehensive validation.
+ * @param raw - Raw response string that may contain JSON in markdown code blocks
+ * @returns Validated StandupSummary object
+ * @throws Error if parsing or validation fails
+ */
 function parseStandupJson(raw: string): StandupSummary {
   // Strip markdown code block if present
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 
-  const parsed = JSON.parse(cleaned);
+  if (!cleaned) {
+    throw new Error('Empty or whitespace-only JSON response received');
+  }
 
-  return {
-    yesterday: Array.isArray(parsed.yesterday) ? toBullets(parsed.yesterday) : [],
-    today: Array.isArray(parsed.today) ? toBullets(parsed.today) : [],
-    blockers: Array.isArray(parsed.blockers) ? toBullets(parsed.blockers) : [],
-  };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (error) {
+    throw new Error(`Invalid JSON syntax: ${error instanceof Error ? error.message : 'Unknown parsing error'}`);
+  }
+
+  // Validate the parsed structure
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('Invalid JSON structure: expected object, got ' + typeof parsed);
+  }
+
+  const obj = parsed as Record<string, unknown>;
+
+  // Validate required properties exist and are arrays
+  const requiredKeys = ['yesterday', 'today', 'blockers'] as const;
+  for (const key of requiredKeys) {
+    if (!(key in obj)) {
+      throw new Error(`Missing required property: ${key}`);
+    }
+  }
+
+  try {
+    return {
+      yesterday: Array.isArray(obj.yesterday) ? toBullets(obj.yesterday) : [],
+      today: Array.isArray(obj.today) ? toBullets(obj.today) : [],
+      blockers: Array.isArray(obj.blockers) ? toBullets(obj.blockers) : [],
+    };
+  } catch (error) {
+    throw new Error(`Failed to convert parsed data to StandupSummary: ${error instanceof Error ? error.message : 'Unknown conversion error'}`);
+  }
 }
 
 export class ClaudeSummaryGenerator implements SummaryGenerator {

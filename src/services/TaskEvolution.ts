@@ -13,12 +13,15 @@
  */
 
 import { NotionTaskRepository } from '../adapters/notion/NotionTaskRepository.js';
-import { TaskSummary } from '../core/domain/types.js';
+import { TaskSummary, TaskStatus, TaskPriority } from '../core/domain/types.js';
 import { logger } from '../utils/logger.js';
 
+/**
+ * Template for generating realistic development tasks.
+ */
 interface TaskTemplate {
   name: string;
-  priority: 'High' | 'Medium' | 'Low';
+  priority: TaskPriority;
   category: 'Feature' | 'Bug' | 'Infrastructure' | 'Documentation' | 'Refactor';
   estimatedDays: number;
   dependencies?: string[];
@@ -43,21 +46,21 @@ export class TaskEvolution {
     // Features
     {
       name: 'Implement user authentication with OAuth 2.0',
-      priority: 'High',
+      priority: TaskPriority.HIGH,
       category: 'Feature',
       estimatedDays: 5,
       context: 'User management system needs secure login flow'
     },
     {
       name: 'Add dark mode toggle to user preferences',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Feature', 
       estimatedDays: 3,
       context: 'UX improvement requested by multiple users'
     },
     {
       name: 'Build real-time notification system',
-      priority: 'High',
+      priority: TaskPriority.HIGH,
       category: 'Feature',
       estimatedDays: 7,
       dependencies: ['WebSocket infrastructure', 'User preferences'],
@@ -65,14 +68,14 @@ export class TaskEvolution {
     },
     {
       name: 'Create advanced search with filters',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Feature',
       estimatedDays: 4,
       context: 'Users need better content discovery'
     },
     {
       name: 'Implement file upload with progress tracking',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Feature',
       estimatedDays: 3,
       context: 'Support for user-generated content'
@@ -81,28 +84,28 @@ export class TaskEvolution {
     // Bugs
     {
       name: 'Fix memory leak in WebSocket connections',
-      priority: 'High',
+      priority: TaskPriority.HIGH,
       category: 'Bug',
       estimatedDays: 2,
       context: 'Production issue causing server instability'
     },
     {
       name: 'Resolve infinite scroll pagination bug',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Bug',
       estimatedDays: 1,
       context: 'Users report duplicate content loading'
     },
     {
       name: 'Fix race condition in async data fetching',
-      priority: 'High',
+      priority: TaskPriority.HIGH,
       category: 'Bug',
       estimatedDays: 2,
       context: 'Intermittent data corruption in user profiles'
     },
     {
       name: 'Correct timezone handling in date picker',
-      priority: 'Low',
+      priority: TaskPriority.LOW,
       category: 'Bug',
       estimatedDays: 1,
       context: 'International users report incorrect dates'
@@ -111,28 +114,28 @@ export class TaskEvolution {
     // Infrastructure
     {
       name: 'Migrate database to PostgreSQL 15',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Infrastructure',
       estimatedDays: 5,
       context: 'Performance improvements and new features'
     },
     {
       name: 'Set up automated backup strategy',
-      priority: 'High',
+      priority: TaskPriority.HIGH,
       category: 'Infrastructure',
       estimatedDays: 2,
       context: 'Data protection and disaster recovery'
     },
     {
       name: 'Implement Redis caching layer',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Infrastructure',
       estimatedDays: 3,
       context: 'Reduce database load and improve response times'
     },
     {
       name: 'Configure monitoring and alerting',
-      priority: 'High',
+      priority: TaskPriority.HIGH,
       category: 'Infrastructure',
       estimatedDays: 4,
       context: 'Proactive issue detection and system health'
@@ -141,21 +144,21 @@ export class TaskEvolution {
     // Documentation
     {
       name: 'Write API documentation for v2 endpoints',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Documentation',
       estimatedDays: 2,
       context: 'Developer onboarding and external integrations'
     },
     {
       name: 'Create user onboarding guide',
-      priority: 'Low',
+      priority: TaskPriority.LOW,
       category: 'Documentation',
       estimatedDays: 1,
       context: 'Reduce support tickets and improve user experience'
     },
     {
       name: 'Update deployment runbook',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Documentation',
       estimatedDays: 1,
       context: 'Streamline release process and reduce errors'
@@ -164,21 +167,21 @@ export class TaskEvolution {
     // Refactoring
     {
       name: 'Refactor authentication middleware',
-      priority: 'Low',
+      priority: TaskPriority.LOW,
       category: 'Refactor',
       estimatedDays: 3,
       context: 'Improve code maintainability and add test coverage'
     },
     {
       name: 'Extract common utilities into shared library',
-      priority: 'Low',
+      priority: TaskPriority.LOW,
       category: 'Refactor',
       estimatedDays: 2,
       context: 'Reduce code duplication across services'
     },
     {
       name: 'Optimize database queries for user dashboard',
-      priority: 'Medium',
+      priority: TaskPriority.MEDIUM,
       category: 'Refactor',
       estimatedDays: 2,
       context: 'Page load time exceeded 3 seconds under load'
@@ -241,7 +244,7 @@ export class TaskEvolution {
    */
   private async updateProjectContext(tasks: TaskSummary[]): Promise<void> {
     this.projectContext.activeFeatures = tasks
-      .filter(t => t.status === 'In Progress' && t.title.toLowerCase().includes('feature'))
+      .filter(t => t.status === TaskStatus.IN_PROGRESS && t.title.toLowerCase().includes('feature'))
       .map(t => t.title);
     
     this.projectContext.recentBugs = tasks
@@ -269,36 +272,36 @@ export class TaskEvolution {
     
     // Task progression logic based on current status and time
     switch (task.status) {
-      case 'To Do':
+      case TaskStatus.TODO:
         // 40% chance to start working on high priority tasks, 20% for others
-        const startChance = task.priority === 'High' ? 0.4 : 0.2;
+        const startChance = task.priority === TaskPriority.HIGH ? 0.4 : 0.2;
         if (Math.random() < startChance) {
-          await this.updateTaskStatus(task, 'In Progress');
+          await this.updateTaskStatus(task, TaskStatus.IN_PROGRESS);
           logger.info(`🚀 Started work on: ${task.title}`);
           return 'updated';
         }
         break;
         
-      case 'In Progress':
+      case TaskStatus.IN_PROGRESS:
         // Tasks should complete based on estimated time and some variability
         const completionChance = Math.min(0.8, daysSinceCreation * 0.1 + 0.1);
         const blockChance = 0.05; // 5% chance of getting blocked
         
         if (Math.random() < blockChance) {
-          await this.updateTaskStatus(task, 'Blocked');
+          await this.updateTaskStatus(task, TaskStatus.BLOCKED);
           logger.info(`🚧 Task blocked: ${task.title}`);
           return 'updated';
         } else if (Math.random() < completionChance) {
-          await this.updateTaskStatus(task, 'Done');
+          await this.updateTaskStatus(task, TaskStatus.DONE);
           logger.info(`✅ Completed task: ${task.title}`);
           return 'completed';
         }
         break;
         
-      case 'Blocked':
+      case TaskStatus.BLOCKED:
         // 30% chance to unblock and continue work
         if (Math.random() < 0.3) {
-          await this.updateTaskStatus(task, 'In Progress');
+          await this.updateTaskStatus(task, TaskStatus.IN_PROGRESS);
           logger.info(`🔓 Unblocked task: ${task.title}`);
           return 'updated';
         }
@@ -369,7 +372,7 @@ export class TaskEvolution {
     await this.taskRepo.createTask({
       title: taskName,
       priority: template.priority,
-      status: 'To Do',
+      status: TaskStatus.TODO,
       dueDate: dueDate.toISOString().split('T')[0], // Just the date part
       notes: `${template.context}\n\nCategory: ${template.category}\nEstimated effort: ${template.estimatedDays} days`
     });
@@ -380,7 +383,7 @@ export class TaskEvolution {
   /**
    * Updates task status in Notion
    */
-  private async updateTaskStatus(task: TaskSummary, newStatus: string): Promise<void> {
+  private async updateTaskStatus(task: TaskSummary, newStatus: TaskStatus): Promise<void> {
     await this.taskRepo.updateTaskStatus(task.id, newStatus);
     logger.info(`🔄 Updated ${task.title} from ${task.status} to ${newStatus}`);
   }

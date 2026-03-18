@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TaskSummary } from '../src/core/domain/types';
+import { TaskStatus, TaskPriority } from '../src/core/domain/types';
 
 // Mock the Anthropic SDK before importing the class
 vi.mock('@anthropic-ai/sdk', () => {
@@ -22,9 +23,9 @@ vi.mock('../src/config/index', () => ({
 const mockTask: TaskSummary = {
   id: '1',
   title: 'Implement auth',
-  status: 'Done',
+  status: TaskStatus.DONE,
   dueDate: '2026-03-13',
-  priority: 'High',
+  priority: TaskPriority.HIGH,
   lastEdited: '2026-03-13T10:00:00Z',
   url: 'https://notion.so/1',
 };
@@ -35,7 +36,8 @@ describe('ClaudeSummaryGenerator', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const Anthropic = (await import('@anthropic-ai/sdk')).default as ReturnType<typeof vi.fn>;
+    const AnthropicModule = await import('@anthropic-ai/sdk');
+    const Anthropic = AnthropicModule.default as any;
     mockCreate = vi.fn();
     Anthropic.mockImplementation(() => ({ messages: { create: mockCreate } }));
     const { ClaudeSummaryGenerator } = await import('../src/adapters/claude/ClaudeSummaryGenerator');
@@ -72,14 +74,12 @@ describe('ClaudeSummaryGenerator', () => {
     expect(result.yesterday).toEqual([{ text: 'Did stuff' }]);
   });
 
-  it('returns empty arrays for missing fields in JSON', async () => {
+  it('throws error for missing required fields in JSON', async () => {
     mockCreate.mockResolvedValue({
       content: [{ type: 'text', text: '{"yesterday":[{"text":"Done something"}]}' }],
     });
 
-    const result = await generator.generateSummary([mockTask], []);
-    expect(result.today).toEqual([]);
-    expect(result.blockers).toEqual([]);
+    await expect(generator.generateSummary([mockTask], [])).rejects.toThrow('Missing required property: today');
   });
 
   it('throws on invalid JSON response', async () => {

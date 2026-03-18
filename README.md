@@ -1,114 +1,157 @@
 # Notion of Progress
 
 [![Integration](https://github.com/elpic/notion-of-progress/actions/workflows/integration.yml/badge.svg)](https://github.com/elpic/notion-of-progress/actions/workflows/integration.yml)
+[![Daily Standup](https://github.com/elpic/notion-of-progress/actions/workflows/daily-standup.yml/badge.svg)](https://github.com/elpic/notion-of-progress/actions/workflows/daily-standup.yml)
+[![Weekly Digest](https://github.com/elpic/notion-of-progress/actions/workflows/weekly-digest.yml/badge.svg)](https://github.com/elpic/notion-of-progress/actions/workflows/weekly-digest.yml)
 
-> Your daily standups, on autopilot. Claude reads your tasks every morning and writes the full Yesterday / Today / Blockers summary right into Notion — no manual updates needed.
+> **AI-powered standup automation that never misses a beat.** Claude reads your tasks every morning, generates intelligent summaries, and writes beautifully formatted standup pages directly into Notion — completely hands-free.
 
 ## 🔥 **[LIVE SYSTEM DASHBOARD](https://pablo-ifran.notion.site/Notion-of-Progress-323de7d1d23880c89234f2e705e1b938?source=copy_link)** 🔥
 
-**See the system breathing in real-time** → The only submission where Notion IS the monitoring dashboard. Click to watch the AI agent's live operational status, run history, and system metrics — all updating automatically.
+**Watch the AI agent breathe in real-time** → The only submission where Notion *is* the monitoring dashboard. Click to see live operational status, execution history, and system health metrics updating automatically.
 
 ---
+
+<div align="center">
 
 [![Watch the demo](https://img.youtube.com/vi/36WeQq2UOaA/maxresdefault.jpg)](https://www.youtube.com/watch?v=36WeQq2UOaA)
 
----
+**🎬 [Watch the Demo Video](https://www.youtube.com/watch?v=36WeQq2UOaA)**
 
-## What it does
-
-**Notion of Progress** is an AI agent that runs every morning and handles your entire standup — automatically.
-
-It connects to your Notion workspace via the **Notion MCP server**, reads your task database, generates a structured summary using **Claude**, and writes a beautifully formatted standup page — complete with linked tasks, color-coded callouts, and a Discord notification to your team.
-
-Zero manual input. Every single day.
+</div>
 
 ---
 
-## 🚀 Live System Dashboard
+## ✨ What Makes This Special
 
-**Something unique:** This isn't just automation — it's a **self-monitoring AI system** where Notion becomes the live operational dashboard.
+### 🤖 **Intelligent Task Evolution**
+Every day, the system doesn't just read your tasks—it **evolves your project**:
+- **Generates realistic new tasks** based on current project context (Features, Bugs, Infrastructure, Documentation)
+- **Progresses existing tasks** through natural lifecycles (To Do → In Progress → Done/Blocked)
+- **Simulates authentic development patterns** with sprint-like workflows and priorities
+- **60+ task templates** covering real software engineering scenarios
 
-🔗 **[View Live Dashboard](https://pablo-ifran.notion.site/Notion-of-Progress-323de7d1d23880c89234f2e705e1b938?source=copy_link)**
+### 🧠 **AI-Powered Standup Generation**
+Using **Notion MCP** and **Claude Sonnet**, the system:
+- **Autonomously navigates** your Notion workspace via MCP tools
+- **Intelligently decides** whether to create new pages or update existing ones
+- **Writes beautifully formatted content** with callouts, links, and rich formatting
+- **Handles edge cases gracefully** with comprehensive error recovery
 
-The AI agent doesn't just write standups — it **monitors itself** and updates a real-time status page showing:
+### 📊 **Self-Monitoring Dashboard**
+The AI agent **monitors itself** and maintains a live operational dashboard:
+- 🟢 **Real-time system status** (Operational/Degraded/Down)
+- ⏰ **Live execution timestamps** (see it breathing)
+- 📈 **Cumulative metrics** (total standups, success rate, uptime)
+- 🎯 **Execution details** (Local runs vs GitHub Actions)
+- 🚨 **Error tracking** with detailed failure analysis
 
-- 🟢 **Live operational status** (updates after every run)
-- ⏰ **Last execution timestamp** (see it breathing)
-- 📊 **Total standups generated** (growing counter)
-- 🖥️ **Infrastructure details** (Local/GitHub Actions)
-- ⚡ **System health metrics** (99.9% uptime)
-
-**The complete closed loop:** Agent writes standups → Agent monitors itself → All in Notion → Publicly viewable → Zero external dependencies.
-
-This is the **only submission** where you can watch the AI system operate in real-time without installing anything.
+### 🔄 **Complete Automation**
+- **GitHub Actions workflows** run daily standups and weekly digests
+- **Zero manual intervention** required once configured
+- **Discord notifications** keep your team in the loop
+- **Idempotent operations** safe to run multiple times
 
 ---
 
-## How it works
+## 🏗️ How It Works
+
+```mermaid
+graph LR
+    A[📅 Schedule Trigger] --> B[🎯 Task Evolution]
+    B --> C[📊 Fetch Tasks]
+    C --> D[🧠 AI Summary]
+    D --> E[✍️ Write Standup]
+    E --> F[📋 Update Status]
+    F --> G[💬 Discord Alert]
+    
+    B -.-> H[🆕 Create Tasks]
+    B -.-> I[🔄 Progress Tasks]
+    
+    style A fill:#e1f5fe
+    style D fill:#fff3e0
+    style E fill:#f3e5f5
+    style F fill:#e8f5e8
+```
+
+### The Architecture Story
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        Notion of Progress                            │
 │                                                                     │
-│  1. Fetch Tasks   2. Generate Summary   3. Write Page   4. Monitor  │
-│  ─────────────    ─────────────────     ────────────    ─────────   │
-│  Notion Task  →   Claude API       →    Notion MCP  →   Live Status │
-│  DB (typed        (Sonnet 4.6)          (Opus 4.6       Dashboard   │
-│  client)                               Agent SDK)     (Self-Monitor) │
+│  1. Evolve Tasks   2. Fetch Data     3. AI Analysis   4. Write Page │
+│  ─────────────     ─────────────     ────────────     ──────────── │
+│  TaskEvolution →   Notion APIs   →   Claude Sonnet →  Notion MCP   │
+│  (Context-aware    (Typed client     (4.6 + Agent    (Autonomous   │
+│   generation)      + Retry logic)     SDK)           navigation)   │
 │                                                              │       │
-│                                            5. Notify        ↓       │
-│                                            Discord Webhook          │
+│                        5. Self-Monitor        6. Notify     ↓       │
+│                        System Status         Discord       Dashboard │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-The magic is in **step 3** — instead of hard-coded Notion API calls, a Claude agent autonomously navigates the Notion workspace via MCP tools. It decides whether to create a new page or update an existing one, structures all the blocks, and writes everything in one pass.
+**The key innovation:** Instead of hardcoded API calls, a **Claude agent autonomously navigates Notion** via MCP tools, making intelligent decisions about page creation, content structure, and formatting in real-time.
 
 ---
 
-## The standup page
+## 🎯 Core Features
 
-Every generated standup looks like this in Notion:
+### 📝 **Generated Standup Pages**
+Every standup is beautifully formatted with:
 
-| Block | Content |
-|-------|---------|
-| 📊 | `3 completed · 4 active · 1 blocker` |
-| ✅ Yesterday | Bullet points with links to completed tasks |
-| 🔨 Today | Bullet points with links to active tasks |
-| 🚧 Blockers | Highlighted in red if blockers exist |
+| Section | Content | Visual |
+|---------|---------|--------|
+| 📊 **Summary** | `3 completed · 4 active · 1 blocker` | Color-coded status callout |
+| ✅ **Yesterday** | Linked bullet points to completed tasks | Green success indicators |
+| 🔨 **Today** | Active work items with Notion links | Progress callouts |
+| 🚧 **Blockers** | Highlighted blockers with context | Red warning callouts |
 
-Each bullet links directly back to the source task in Notion. Pages get a random emoji icon on every run.
+### 🎨 **Rich Visual Formatting**
+- **Random emoji icons** on every page for personality
+- **Color-coded callouts** for different content types  
+- **Direct task links** back to source Notion pages
+- **Professional typography** with consistent styling
+- **Responsive blocks** that work on mobile and desktop
+
+### 🎲 **Dynamic Task Scenarios**
+The system creates realistic software development scenarios:
+
+**Feature Development:**
+- Implement OAuth 2.0 authentication
+- Build real-time notification system
+- Add dark mode toggle to preferences
+- Create advanced search with filters
+
+**Bug Fixes:**
+- Fix memory leak in WebSocket connections
+- Resolve race condition in async data fetching
+- Correct timezone handling in date picker
+- Resolve infinite scroll pagination bug
+
+**Infrastructure:**
+- Migrate database to PostgreSQL 15
+- Implement Redis caching layer
+- Configure monitoring and alerting
+- Set up automated backup strategy
+
+**Documentation & Refactoring:**
+- Write API documentation for v2 endpoints
+- Refactor authentication middleware
+- Update deployment runbooks
+- Extract utilities into shared library
 
 ---
 
-## Architecture
+## 🚀 Quick Start
 
-Built on **ports and adapters** — the core domain has zero knowledge of Notion, Claude, or any external system.
+### **1. Prerequisites**
 
-```
-src/
-├── core/
-│   ├── domain/types.ts          ← TaskSummary, StandupSummary, StandupBullet
-│   ├── ports/                   ← interfaces only, no dependencies
-│   └── standup.ts               ← StandupService orchestrator
-└── adapters/
-    ├── notion/
-    │   ├── NotionTaskRepository.ts      ← reads Task DB via @notionhq/client
-    │   └── NotionStandupRepository.ts   ← writes standup pages
-    ├── claude/
-    │   └── ClaudeSummaryGenerator.ts    ← calls Claude API
-    ├── mcp/
-    │   └── McpStandupAgent.ts           ← Claude Agent SDK + Notion MCP
-    └── discord/
-        └── DiscordNotifier.ts           ← posts to Discord webhook
-```
+- **Node.js 18+** (managed via [mise](https://mise.jdx.dev))
+- **Notion workspace** with integration permissions
+- **Anthropic API key** for Claude access
 
-Swapping Notion for Linear or Claude for another model means writing one new adapter — nothing else changes.
-
----
-
-## Setup
-
-**1. Clone and install**
+### **2. Installation**
 
 ```bash
 git clone https://github.com/elpic/notion-of-progress
@@ -117,83 +160,363 @@ npm install
 # or: mise run install
 ```
 
-**2. Get your API keys**
-
-1. **Notion integration**: Create at [notion.so/my-integrations](https://www.notion.com/my-integrations)
-2. **Anthropic API key**: Get from [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
-
-**3. Run the setup**
+### **3. Configuration**
 
 ```bash
+# Copy example environment
 cp .env.example .env
-# Add your API keys to .env, then:
+```
+
+**Get your API keys:**
+1. **Notion Integration**: [notion.so/my-integrations](https://www.notion.com/my-integrations)
+2. **Anthropic API**: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+
+Add them to `.env`:
+```env
+NOTION_API_KEY=secret_...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### **4. Automated Setup**
+
+```bash
 mise run setup
 ```
 
-The setup script handles **everything automatically**:
-- ✅ Creates your Notion databases (Task DB, Standup Log, System Status)
-- ✅ Generates a live system dashboard with real-time monitoring  
-- ✅ Configures GitHub repository secrets for automated deployment
-- ✅ Provides next steps and testing instructions
+**The setup script automatically:**
+- ✅ Creates Notion databases (Tasks, Standup Log, System Status)
+- ✅ Generates live system monitoring dashboard
+- ✅ Configures GitHub repository secrets for automation
+- ✅ Provides testing instructions and next steps
 
-> **Tip:** Before running setup, create an empty page in Notion and connect your integration: Page → `···` → **Connections** → your integration.
+> 💡 **Pro tip:** Before setup, create an empty Notion page and connect your integration: **Page menu (···) → Connections → Add your integration**
 
-**4. (Optional) Connect to Notion My Tasks**
-
-1. Open your **Task DB** → `···` → **Turn into task database**
-2. Go to **Home** → **My tasks** widget → **Settings**
-3. Under **Task sources**, add your **Task DB**
-
-Tasks assigned to you will appear in **My tasks** automatically.
-
-**5. Run your first standup**
+### **5. First Run**
 
 ```bash
+# Generate your first standup
 mise run standup
+
+# Watch the AI think (verbose mode)  
+mise run standup -- --verbose
+
+# Preview without writing (dry run)
+mise run standup -- --dry-run
 ```
+
+### **6. Enable Automation** (Optional)
+
+For automated daily standups, configure GitHub Actions:
+1. Push your code to GitHub
+2. The setup script configures repository secrets automatically
+3. Workflows run daily at 8 AM EST and weekly digests on Fridays
 
 ---
 
-## Commands
+## 🛠️ Commands Reference
 
+### **Core Operations**
 ```bash
-mise run standup              # generate today's standup
-mise run standup -- --verbose # watch Claude think and call Notion APIs live
-mise run standup -- --dry-run # preview the summary without writing to Notion
-mise run start                # start the daily scheduler (weekdays at 08:00)
-mise run setup                # unified setup: databases + GitHub secrets
-mise run digest               # generate weekly digest
-mise run test                 # run tests
-mise run typecheck            # TypeScript type check
+# Standup generation
+mise run standup                    # Generate today's standup
+mise run standup -- --verbose       # Watch AI reasoning in real-time
+mise run standup -- --dry-run       # Preview without writing to Notion
+
+# Task evolution
+mise run evolve-tasks               # Generate new tasks, progress existing ones
+mise run evolve-tasks -- --dry-run  # Preview task changes
+mise run evolve-tasks -- --verbose  # Detailed evolution logging
+
+# Weekly reporting
+mise run digest                     # Generate weekly digest
+mise run digest -- --week -1        # Generate last week's digest
+```
+
+### **Development & Testing**
+```bash
+# Quality assurance
+mise run test                       # Run test suite
+mise run typecheck                  # TypeScript validation
+mise run setup                     # Complete system setup
+
+# Local scheduling
+mise run start                      # Start local scheduler (8 AM weekdays)
+```
+
+### **Manual Operations**
+```bash
+# Direct npm commands (if you prefer)
+npm run standup
+npm run digest
+npm run evolve-tasks
+npm run setup
 ```
 
 ---
 
-## Environment variables
+## ⚙️ Configuration
+
+### **Environment Variables**
 
 | Variable | Required | Default | Description |
-|---|---|---|---|
-| `NOTION_API_KEY` | ✅ | — | Notion internal integration token |
-| `ANTHROPIC_API_KEY` | ✅ | — | Anthropic API key |
-| `NOTION_TASK_DB_ID` | auto | — | Auto-generated by setup script |
-| `NOTION_STANDUP_LOG_DB_ID` | auto | — | Auto-generated by setup script |
-| `NOTION_SYSTEM_STATUS_DB_ID` | auto | — | Auto-generated by setup script |
-| `DISCORD_WEBHOOK_URL` | — | — | Post standup to Discord after generation |
-| `CRON_SCHEDULE` | — | `0 8 * * 1-5` | Local scheduler: weekdays at 08:00 |
-| `DIGEST_CRON_SCHEDULE` | — | `0 17 * * 5` | Local scheduler: Fridays at 17:00 |  
-| `TZ` | — | `America/New_York` | Scheduler timezone (local runs only) |
-| `TASK_STATUS_PROPERTY` | — | `Status` | Status property name in Task DB |
-| `TASK_DONE_VALUE` | — | `Done` | Value that means "completed" |
-| `TASK_TITLE_PROPERTY` | — | `Name` | Title property name in Task DB |
+|----------|----------|---------|-------------|
+| `NOTION_API_KEY` | ✅ **Required** | — | Notion internal integration token |
+| `ANTHROPIC_API_KEY` | ✅ **Required** | — | Anthropic API key for Claude |
+| `NOTION_TASK_DB_ID` | 🤖 **Auto-generated** | — | Task database ID (created by setup) |
+| `NOTION_STANDUP_LOG_DB_ID` | 🤖 **Auto-generated** | — | Standup log database ID |
+| `NOTION_SYSTEM_STATUS_DB_ID` | 🤖 **Auto-generated** | — | System status dashboard ID |
+| `DISCORD_WEBHOOK_URL` | 🔧 *Optional* | — | Discord channel webhook for notifications |
+
+### **Scheduler Configuration** (Local runs only)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CRON_SCHEDULE` | `0 8 * * 1-5` | Daily standup schedule (weekdays 8 AM) |
+| `DIGEST_CRON_SCHEDULE` | `0 17 * * 5` | Weekly digest schedule (Fridays 5 PM) |
+| `TZ` | `America/New_York` | Timezone for local scheduler |
+
+### **Notion Database Customization**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TASK_STATUS_PROPERTY` | `Status` | Name of status property in Task DB |
+| `TASK_DONE_VALUE` | `Done` | Status value meaning "completed" |
+| `TASK_TITLE_PROPERTY` | `Name` | Name of title property in Task DB |
 
 ---
 
-## Integrations
+## 🏛️ Architecture Deep Dive
 
-- **Discord** — see [docs/integrations/discord.md](docs/integrations/discord.md)
+### **Clean Architecture Principles**
+Built on **Ports and Adapters** (Hexagonal Architecture):
+
+```
+src/
+├── core/                           # 🏛️ Domain Logic (Framework Independent)
+│   ├── domain/
+│   │   └── types.ts               # Core types and interfaces
+│   ├── ports/                     # Interface contracts
+│   │   ├── TaskRepository.ts      # Task data access interface
+│   │   └── SummaryGenerator.ts    # AI summary generation interface
+│   └── standup.ts                 # 🎯 Core business logic
+│
+├── adapters/                       # 🔌 External System Integrations
+│   ├── notion/                    # Notion API integrations
+│   │   ├── NotionTaskRepository.ts    # Task DB operations
+│   │   └── NotionStandupRepository.ts # Standup page creation
+│   ├── claude/
+│   │   └── ClaudeSummaryGenerator.ts  # Direct Claude API calls
+│   ├── mcp/                       # Model Context Protocol
+│   │   ├── McpStandupAgent.ts         # Claude Agent + Notion MCP
+│   │   └── McpDigestAgent.ts          # Weekly digest generation
+│   └── discord/
+│       └── DiscordNotifier.ts         # Team notifications
+│
+├── services/                       # 🎯 Application Services
+│   └── TaskEvolution.ts          # Intelligent task generation
+│
+└── utils/                          # 🛠️ Shared Utilities
+    ├── systemStatus.ts            # Live dashboard management
+    ├── retry.ts                   # Resilient API calls
+    ├── logger.ts                  # Structured logging
+    └── dateHelpers.ts             # Date/time utilities
+```
+
+### **Key Design Decisions**
+
+🎯 **Ports and Adapters**: Core business logic has zero dependencies on external frameworks  
+🔄 **Dependency Inversion**: High-level modules don't depend on low-level modules  
+🛡️ **Error Boundaries**: Comprehensive error handling with graceful degradation  
+🔁 **Retry Logic**: Resilient operations with exponential backoff  
+📊 **Observable**: Self-monitoring with detailed operational metrics  
+🧪 **Testable**: Clean separation enables comprehensive unit testing  
 
 ---
 
-## Built for
+## 🔌 Integrations
 
-[DEV.to Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04) — March 2026
+### **Discord Notifications**
+Automatically notify your team when standups are generated:
+
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+**Features:**
+- Rich embedded messages with standup summary
+- Color-coded status indicators  
+- Direct links to Notion pages
+- Automatic retry on webhook failures
+
+### **GitHub Actions Automation**
+Fully automated standups with zero maintenance:
+
+**Daily Standup Workflow:**
+- Triggers weekdays at 8 AM EST
+- Evolves project tasks realistically
+- Generates and posts standup
+- Updates system monitoring dashboard
+- Sends Discord notification
+
+**Weekly Digest Workflow:**
+- Triggers Fridays at 5 PM EST
+- Aggregates week's progress
+- Creates comprehensive weekly summary
+- Archives completed work
+
+### **Notion Integration**
+Deep integration with Notion's ecosystem:
+
+- **Task Database** syncs with "My Tasks" widget
+- **Rich formatting** with callouts, links, and blocks
+- **Database properties** fully customizable
+- **MCP navigation** enables autonomous content creation
+
+---
+
+## 🚦 System Monitoring
+
+### **Live Dashboard Features**
+The system maintains a real-time operational dashboard in Notion:
+
+**Operational Metrics:**
+- 🟢 System status (Operational/Degraded/Down)
+- ⏰ Last execution timestamp with timezone
+- 📊 Total standups generated (cumulative counter)
+- 🏗️ Infrastructure details (Local/GitHub Actions)
+- 📈 Success rate and uptime tracking
+
+**Error Tracking:**
+- 🚨 Detailed error messages and stack traces
+- 🔄 Retry attempt logging
+- 📋 Recovery action recommendations
+- 🕐 Error timestamp and environment context
+
+**Evolution Metrics:**
+- 📝 Tasks created per evolution cycle
+- 🔄 Tasks progressed through lifecycle
+- ✅ Tasks completed and success patterns
+- 🧮 Project velocity calculations
+
+### **Health Checks**
+The system continuously monitors:
+- API connectivity (Notion, Anthropic, Discord)
+- Database accessibility and schema validation
+- MCP server communication
+- GitHub Actions workflow status
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+### **Test Coverage**
+```bash
+mise run test              # Run full test suite
+mise run test -- --watch   # Watch mode for development
+mise run typecheck         # TypeScript validation
+```
+
+**Testing Strategy:**
+- ✅ **Unit Tests**: Core business logic and utilities
+- ✅ **Integration Tests**: External API interactions
+- ✅ **Type Safety**: Comprehensive TypeScript coverage
+- ✅ **Error Scenarios**: Edge case and failure handling
+- ✅ **Idempotency**: Safe retry and repeat operations
+
+### **Code Quality Tools**
+- **TypeScript**: Strict type checking with comprehensive interfaces
+- **ESLint**: Code style and pattern enforcement
+- **Prettier**: Automated code formatting
+- **Vitest**: Fast unit testing framework
+- **GitHub Actions**: Continuous integration pipeline
+
+---
+
+## 🔧 Development
+
+### **Local Development Setup**
+```bash
+# Clone and install
+git clone https://github.com/elpic/notion-of-progress
+cd notion-of-progress
+mise install              # Install Node.js and tools
+mise run install          # Install npm dependencies
+
+# Configure environment
+cp .env.example .env      # Add your API keys
+mise run setup            # Create Notion databases
+
+# Development workflow
+mise run test             # Run tests
+mise run typecheck        # Type checking
+mise run standup -- --dry-run  # Test standup generation
+```
+
+### **Contributing Guidelines**
+
+1. **Branch Naming**: `feat/feature-name`, `fix/bug-name`, `docs/update-name`
+2. **Commit Messages**: Follow conventional commits format
+3. **Code Style**: Run `mise run typecheck` before committing
+4. **Testing**: Add tests for new features
+5. **Documentation**: Update README for user-facing changes
+
+### **Project Structure Conventions**
+- **`src/core/`**: Framework-independent business logic
+- **`src/adapters/`**: External system integrations
+- **`src/utils/`**: Shared utilities and helpers
+- **`scripts/`**: Command-line tools and automation
+- **`docs/`**: Additional documentation
+
+---
+
+## 📚 Additional Documentation
+
+### **Deep Dive Guides**
+- [Architecture Overview](docs/architecture.md) - System design and patterns
+- [Discord Integration](docs/integrations/discord.md) - Team notification setup
+- [Task Evolution System](docs/task-evolution.md) - AI task generation details
+- [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
+
+### **API References**
+- [Core Types](src/core/domain/types.ts) - TypeScript interfaces and types
+- [MCP Integration](docs/mcp-integration.md) - Model Context Protocol usage
+- [System Status API](docs/system-status.md) - Monitoring and health checks
+
+---
+
+## 🎯 Built For
+
+**[DEV.to Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04)** — March 2026
+
+This project showcases the power of **Model Context Protocol (MCP)** for creating intelligent, autonomous AI agents that can navigate and manipulate complex systems like Notion workspaces.
+
+### **Key Innovations Demonstrated**
+- 🧠 **Autonomous AI Navigation**: Claude agents making intelligent decisions about content creation
+- 🔄 **Context-Aware Task Evolution**: Realistic software development simulation
+- 📊 **Self-Monitoring Systems**: AI agents that monitor and report on their own operations
+- 🎯 **Clean Architecture**: Production-ready code with proper separation of concerns
+- 🚀 **Full Automation**: Zero-touch operation with comprehensive error handling
+
+---
+
+## 🏆 What Makes This Unique
+
+1. **🎭 Living Development Simulation**: Unlike static demos, this creates dynamic, evolving project scenarios that feel authentic
+
+2. **🔍 Complete Transparency**: Watch the AI think and make decisions in real-time with verbose logging and live monitoring
+
+3. **🛡️ Production Ready**: Comprehensive error handling, retry logic, monitoring, and self-healing capabilities
+
+4. **🏗️ Architectural Excellence**: Clean separation of concerns enables easy testing, maintenance, and extension
+
+5. **📊 Self-Documenting**: The system maintains its own operational dashboard, providing immediate insight into performance and health
+
+**This isn't just automation—it's an intelligent, self-aware system that evolves and adapts, providing genuine value while showcasing the future of AI-powered productivity tools.**
+
+---
+
+<div align="center">
+
+**⭐ If this project helps you, please star it on GitHub!**
+
+[🚀 Get Started](#-quick-start) • [📊 Live Dashboard](https://pablo-ifran.notion.site/Notion-of-Progress-323de7d1d23880c89234f2e705e1b938?source=copy_link) • [🎬 Demo Video](https://www.youtube.com/watch?v=36WeQq2UOaA)
+
+</div>
