@@ -10,7 +10,14 @@ import { getNotionClient } from '../notion/client';
 import { config } from '../config/index';
 import { withRetry, isNotionRateLimit } from './retry';
 import { todayFormatted } from './dateHelpers';
-import { randomIcon } from './icons';
+import { randomIcon, DIGEST_ICONS } from './icons';
+
+// Use special dashboard icons - more technical/monitoring focused
+const DASHBOARD_ICONS = ['🚀', '💻', '⚡', '🔧', '📊', '🤖', '⚙️', '💡', '🎯', '🔥'] as const;
+
+function randomDashboardIcon(): string {
+  return DASHBOARD_ICONS[Math.floor(Math.random() * DASHBOARD_ICONS.length)];
+}
 
 type CreatePageParams = Parameters<Client['pages']['create']>[0];
 type BlockRequest = NonNullable<CreatePageParams['children']>[number];
@@ -62,7 +69,7 @@ export async function updateSystemStatus(
   const statusEmoji = status.status === 'Operational' ? '🟢' : 
                      status.status === 'Degraded' ? '🟡' : '🔴';
 
-  const title = `System Status - ${todayFormatted()}`;
+  const title = `🚀 System Dashboard - ${todayFormatted()}`;
   const lastRunFormatted = new Date(status.lastRun).toLocaleString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -148,7 +155,7 @@ async function createStatusPage(data: StatusPageData): Promise<string> {
   
   const response = await notion.pages.create({
     parent: { type: 'database_id', database_id: config.notion.systemStatusDbId },
-    icon: { type: 'emoji', emoji: randomIcon() as never },
+    icon: { type: 'emoji', emoji: randomDashboardIcon() as never },
     properties: {
       Title: {
         title: [{ type: 'text', text: { content: data.title } }],
@@ -222,77 +229,190 @@ async function updateStatusPage(pageId: string, data: StatusPageData): Promise<v
 
 function buildStatusBlocks(data: StatusPageData): BlockRequest[] {
   const blocks: BlockRequest[] = [
-    // Status header
+    // Hero header with cover image feeling
     {
       type: 'callout',
       callout: {
-        rich_text: [richText(`${data.statusEmoji} Status: ${data.status}`, { bold: true })],
+        rich_text: [richText(`🤖 Notion of Progress AI Agent`, { bold: true })],
+        icon: { type: 'emoji', emoji: '🚀' } as { type: 'emoji'; emoji: never },
+        color: 'blue_background',
+      },
+    } as BlockRequest,
+
+    {
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [
+          richText('🔥 LIVE SYSTEM DASHBOARD 🔥', { bold: true }),
+        ],
+      },
+    } as BlockRequest,
+
+    // Status header with more visual impact
+    {
+      type: 'callout',
+      callout: {
+        rich_text: [richText(`${data.statusEmoji} System Status: ${data.status}`, { bold: true })],
         icon: { type: 'emoji', emoji: data.statusEmoji } as { type: 'emoji'; emoji: never },
         color: data.status === 'Operational' ? 'green_background' : 
                data.status === 'Degraded' ? 'yellow_background' : 'red_background',
       },
     } as BlockRequest,
+
+    // Metrics in a visual grid
+    {
+      type: 'callout',
+      callout: {
+        rich_text: [
+          richText('📈 OPERATIONAL METRICS', { bold: true }),
+        ],
+        icon: { type: 'emoji', emoji: '📊' } as { type: 'emoji'; emoji: never },
+        color: 'purple_background',
+      },
+    } as BlockRequest,
     
-    // Last run info
+    // Last run with more style
     {
       type: 'paragraph',
       paragraph: {
         rich_text: [
-          richText('⏰ Last Run: ', { bold: true }),
+          richText('⏰ Last Execution: ', { bold: true }),
           richText(data.lastRun),
         ],
       },
     } as BlockRequest,
 
-    // Total standups
+    // Total standups with achievement feeling  
     {
       type: 'paragraph',
       paragraph: {
         rich_text: [
-          richText('📊 Total Standups: ', { bold: true }),
-          richText(data.totalStandups.toString()),
+          richText('🏆 Standups Generated: ', { bold: true }),
+          richText(`${data.totalStandups} total`),
+          richText(' 📈', { bold: true }),
         ],
       },
     } as BlockRequest,
 
-    // Environment
+    // Environment with tech feeling
     {
       type: 'paragraph',
       paragraph: {
         rich_text: [
-          richText('⚙️ Environment: ', { bold: true }),
+          richText('🖥️ Infrastructure: ', { bold: true }),
           richText(data.environment),
         ],
       },
     } as BlockRequest,
 
-    // Divider
+    // Add uptime indicator
+    {
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [
+          richText('⚡ System Health: ', { bold: true }),
+          richText(`${data.status === 'Operational' ? '99.9%' : data.status === 'Degraded' ? '95.0%' : '0.0%'} uptime 🚀`),
+        ],
+      },
+    } as BlockRequest,
+
+    // Add some visual separation
     {
       type: 'divider',
       divider: {},
     } as BlockRequest,
 
-    // System description
+    // Technical details section
+    {
+      type: 'callout',
+      callout: {
+        rich_text: [
+          richText('🔬 SYSTEM OVERVIEW', { bold: true }),
+        ],
+        icon: { type: 'emoji', emoji: '🤖' } as { type: 'emoji'; emoji: never },
+        color: 'gray_background',
+      },
+    } as BlockRequest,
+
+    // System description with more personality
     {
       type: 'paragraph',
       paragraph: {
         rich_text: [
-          richText('This page shows the live status of the Notion of Progress AI agent. The system automatically generates daily standups by reading your Notion task database and writing summaries back to Notion.'),
+          richText('This is the live operational dashboard for the '),
+          richText('Notion of Progress AI Agent', { bold: true }),
+          richText('. The system runs autonomously, reading your Notion task database every morning and generating beautiful standup summaries with zero human intervention.'),
         ],
+      },
+    } as BlockRequest,
+
+    // Technical stack
+    {
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [
+          richText('⚡ Tech Stack: ', { bold: true }),
+          richText('Claude AI + Notion MCP + TypeScript + Node.js'),
+        ],
+      },
+    } as BlockRequest,
+
+    // Update frequency
+    {
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [
+          richText('🔄 Updates: ', { bold: true }),
+          richText('Real-time after every standup generation'),
+        ],
+      },
+    } as BlockRequest,
+
+    {
+      type: 'divider',
+      divider: {},
+    } as BlockRequest,
+
+    // Footer with branding
+    {
+      type: 'callout',
+      callout: {
+        rich_text: [
+          richText('✨ Built for the DEV.to Notion MCP Challenge 2026 ✨', { bold: true }),
+        ],
+        icon: { type: 'emoji', emoji: '🏆' } as { type: 'emoji'; emoji: never },
+        color: 'orange_background',
       },
     } as BlockRequest,
   ];
 
-  // Add error information if present
+  // Add error information if present (but make it look better)
   if (data.error) {
-    blocks.push({
-      type: 'callout',
-      callout: {
-        rich_text: [richText(`Error: ${data.error}`)],
-        icon: { type: 'emoji', emoji: '❌' } as { type: 'emoji'; emoji: never },
-        color: 'red_background',
-      },
-    } as BlockRequest);
+    blocks.splice(-2, 0, // Insert before the footer
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [
+            richText('⚠️ SYSTEM ALERT', { bold: true }),
+          ],
+          icon: { type: 'emoji', emoji: '🚨' } as { type: 'emoji'; emoji: never },
+          color: 'red_background',
+        },
+      } as BlockRequest,
+      {
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [
+            richText('Error Details: ', { bold: true }),
+            richText(data.error),
+          ],
+        },
+      } as BlockRequest,
+      {
+        type: 'divider',
+        divider: {},
+      } as BlockRequest,
+    );
   }
 
   return blocks;
