@@ -11,6 +11,7 @@ export const config = {
     apiKey: require_env('NOTION_API_KEY'),
     taskDbId: require_env('NOTION_TASK_DB_ID'),
     standupLogDbId: require_env('NOTION_STANDUP_LOG_DB_ID'),
+    systemStatusDbId: require_env('NOTION_SYSTEM_STATUS_DB_ID'),
     taskStatusProperty: process.env.TASK_STATUS_PROPERTY ?? 'Status',
     taskDoneValue: process.env.TASK_DONE_VALUE ?? 'Done',
     taskTitleProperty: process.env.TASK_TITLE_PROPERTY ?? 'Name',

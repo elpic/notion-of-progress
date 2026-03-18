@@ -133,6 +133,31 @@ async function createStandupLogDB(parentPageId: string): Promise<string> {
   return response.id;
 }
 
+async function createSystemStatusDB(parentPageId: string): Promise<string> {
+  console.log('  Creating System Status DB...');
+  const response = await notion.databases.create({
+    parent: { type: 'page_id', page_id: parentPageId },
+    title: [{ type: 'text', text: { content: 'System Status' } }],
+    properties: {
+      Title: { title: {} },
+      'Last Run': { date: {} },
+      Status: {
+        select: {
+          options: [
+            { name: 'Operational', color: 'green' },
+            { name: 'Degraded', color: 'yellow' },
+            { name: 'Down', color: 'red' },
+          ],
+        },
+      },
+      'Total Standups': { number: { format: 'number' } },
+      Environment: { rich_text: {} },
+    },
+  });
+  console.log(`  System Status created ✓`);
+  return response.id;
+}
+
 async function validateDB(dbId: string, name: string, requiredProps: string[]): Promise<void> {
   const db = await notion.databases.retrieve({ database_id: dbId });
   const props = Object.keys(db.properties);
@@ -146,11 +171,13 @@ async function main() {
 
   const existingTaskDbId = process.env.NOTION_TASK_DB_ID;
   const existingStandupDbId = process.env.NOTION_STANDUP_LOG_DB_ID;
+  const existingSystemStatusDbId = process.env.NOTION_SYSTEM_STATUS_DB_ID;
 
-  if (existingTaskDbId && existingStandupDbId) {
+  if (existingTaskDbId && existingStandupDbId && existingSystemStatusDbId) {
     console.log('Database IDs found in .env — validating existing databases...\n');
     await validateDB(existingTaskDbId, 'Task DB', ['Name', 'Status', 'Priority', 'Due Date']);
     await validateDB(existingStandupDbId, 'Standup Log', ['Title', 'Date', 'Status', 'Tasks Reviewed']);
+    await validateDB(existingSystemStatusDbId, 'System Status', ['Title', 'Last Run', 'Status', 'Total Standups']);
     console.log('\n✅ All good! Run npm run standup to generate your first standup.\n');
     return;
   }
@@ -181,16 +208,19 @@ async function main() {
 
   const taskDbId = await createTaskDB(parentPageId);
   const standupLogDbId = await createStandupLogDB(parentPageId);
+  const systemStatusDbId = await createSystemStatusDB(parentPageId);
 
   console.log('\n  Writing DB IDs to .env...');
   updateEnv('NOTION_TASK_DB_ID', taskDbId);
   updateEnv('NOTION_STANDUP_LOG_DB_ID', standupLogDbId);
+  updateEnv('NOTION_SYSTEM_STATUS_DB_ID', systemStatusDbId);
 
   console.log(`
 ✅ Setup complete!
 
-  Task DB:      https://www.notion.so/${taskDbId.replace(/-/g, '')}
-  Standup Log:  https://www.notion.so/${standupLogDbId.replace(/-/g, '')}
+  Task DB:        https://www.notion.so/${taskDbId.replace(/-/g, '')}
+  Standup Log:    https://www.notion.so/${standupLogDbId.replace(/-/g, '')}
+  System Status:  https://www.notion.so/${systemStatusDbId.replace(/-/g, '')}
 
   DB IDs have been saved to your .env automatically.
 

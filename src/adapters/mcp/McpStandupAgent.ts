@@ -15,6 +15,7 @@ import { config } from '../../config/index';
 import { todayISO, todayFormatted, yesterdayISO } from '../../utils/dateHelpers';
 import { createRunLogger } from '../../utils/logger';
 import { randomIcon } from '../../utils/icons';
+import { updateSystemStatus, getTotalStandupCount } from '../../utils/systemStatus';
 import type { TaskSummary, StandupSummary } from '../../core/domain/types';
 import { NotionTaskRepository } from '../notion/NotionTaskRepository';
 import { ClaudeSummaryGenerator } from '../claude/ClaudeSummaryGenerator';
@@ -165,28 +166,58 @@ export async function runMcpStandupAgent({ verbose = false, dryRun = false } = {
   const logger = createRunLogger();
   logger.info(`Starting Notion MCP standup agent${dryRun ? ' (dry run)' : ''}`);
 
-  // Phase 1: fetch tasks via typed Notion client (reliable)
-  logger.info('Fetching tasks');
-  const taskRepo = new NotionTaskRepository();
-  const { completed, active } = await taskRepo.fetchTasks();
-  logger.info(`Tasks fetched — completed: ${completed.length}, active: ${active.length}`);
+  // Detect environment
+  const environment = process.env.GITHUB_ACTIONS ? 'GitHub Actions' : 'Local';
 
-  // Phase 2: generate summary with Claude
-  logger.info('Generating standup summary');
-  const summarizer = new ClaudeSummaryGenerator();
-  const summary: StandupSummary = await summarizer.generateSummary(completed, active);
+  try {
+    // Phase 1: fetch tasks via typed Notion client (reliable)
+    logger.info('Fetching tasks');
+    const taskRepo = new NotionTaskRepository();
+    const { completed, active } = await taskRepo.fetchTasks();
+    logger.info(`Tasks fetched — completed: ${completed.length}, active: ${active.length}`);
 
-  // Phase 3: dry run — print and exit without writing
-  if (dryRun) {
-    printDryRun(summary, completed, active);
-    return '';
+    // Phase 2: generate summary with Claude
+    logger.info('Generating standup summary');
+    const summarizer = new ClaudeSummaryGenerator();
+    const summary: StandupSummary = await summarizer.generateSummary(completed, active);
+
+    // Phase 3: dry run — print and exit without writing
+    if (dryRun) {
+      printDryRun(summary, completed, active);
+      return '';
+    }
+
+    // Phase 3: write the page autonomously via Notion MCP
+    const url = await writeStandupViaMcp(summary, completed, active, verbose, logger);
+
+    // Phase 4: notify Discord (optional — skipped if DISCORD_WEBHOOK_URL not set)
+    await notifyDiscord(summary, url, todayFormatted());
+
+    // Phase 5: update system status (success)
+    const totalStandups = await getTotalStandupCount();
+    logger.info('Updating system status');
+    await updateSystemStatus({
+      lastRun: new Date().toISOString(),
+      status: 'Operational',
+      totalStandups,
+      environment,
+    });
+
+    return url;
+  } catch (error) {
+    // Update system status on failure
+    try {
+      const totalStandups = await getTotalStandupCount();
+      await updateSystemStatus({
+        lastRun: new Date().toISOString(),
+        status: 'Down',
+        totalStandups,
+        environment,
+      }, error instanceof Error ? error.message : String(error));
+    } catch (statusError) {
+      logger.error('Failed to update system status after error', statusError);
+    }
+    
+    throw error; // Re-throw original error
   }
-
-  // Phase 3: write the page autonomously via Notion MCP
-  const url = await writeStandupViaMcp(summary, completed, active, verbose, logger);
-
-  // Phase 4: notify Discord (optional — skipped if DISCORD_WEBHOOK_URL not set)
-  await notifyDiscord(summary, url, todayFormatted());
-
-  return url;
 }
