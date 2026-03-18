@@ -26,6 +26,13 @@ import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
 import { Client } from '@notionhq/client';
 
+// Dashboard icons for status pages
+const DASHBOARD_ICONS = ['🚀', '💻', '⚡', '🔧', '📊', '🤖', '⚙️', '💡', '🎯', '🔥'] as const;
+
+function randomDashboardIcon(): string {
+  return DASHBOARD_ICONS[Math.floor(Math.random() * DASHBOARD_ICONS.length)];
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const ENV_PATH = join(ROOT, '.env');
@@ -154,8 +161,114 @@ async function createSystemStatusDB(parentPageId: string): Promise<string> {
       Environment: { rich_text: {} },
     },
   });
-  console.log(`  System Status created ✓`);
+  console.log(`  System Status DB created ✓`);
+  
+  // Create initial status page so users see the dashboard immediately
+  console.log('  Creating initial status page...');
+  await createInitialStatusPage(response.id);
+  console.log(`  Initial status page created ✓`);
+  
   return response.id;
+}
+
+async function createInitialStatusPage(systemStatusDbId: string): Promise<void> {
+  const now = new Date();
+  const today = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  await notion.pages.create({
+    parent: { type: 'database_id', database_id: systemStatusDbId },
+    icon: { type: 'emoji', emoji: randomDashboardIcon() as never },
+    properties: {
+      Title: {
+        title: [{ type: 'text', text: { content: `🚀 System Dashboard - ${today}` } }],
+      },
+      'Last Run': {
+        date: { start: now.toISOString() },
+      },
+      Status: {
+        select: { name: 'Operational' },
+      },
+      'Total Standups': {
+        number: 0,
+      },
+      Environment: {
+        rich_text: [{ type: 'text', text: { content: 'Setup Complete' } }],
+      },
+    },
+    children: [
+      // Hero header
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '🤖 Notion of Progress AI Agent' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '🚀' },
+          color: 'blue_background',
+        },
+      },
+      {
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', text: { content: '🔥 LIVE SYSTEM DASHBOARD 🔥' }, annotations: { bold: true } }],
+        },
+      },
+      // Status
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '🟢 System Status: Ready for First Run' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '🟢' },
+          color: 'green_background',
+        },
+      },
+      // Setup message
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '📋 Setup completed successfully! Run your first standup to see live metrics.' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '✅' },
+          color: 'purple_background',
+        },
+      },
+      {
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [
+            { type: 'text', text: { content: '🚀 Next Steps: ' }, annotations: { bold: true } },
+            { type: 'text', text: { content: 'Run ' }, annotations: {} },
+            { type: 'text', text: { content: 'npm run standup' }, annotations: { code: true } },
+            { type: 'text', text: { content: ' to generate your first standup and see live operational metrics!' }, annotations: {} },
+          ],
+        },
+      },
+      {
+        type: 'divider',
+        divider: {},
+      },
+      // Public sharing hint
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '🌍 Make this page public: Page Settings → Share → Share to web → Anyone with link can view' }, annotations: {} }],
+          icon: { type: 'emoji', emoji: '🔗' },
+          color: 'blue_background',
+        },
+      },
+      // Footer
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '✨ Built for the DEV.to Notion MCP Challenge 2026 ✨' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '🏆' },
+          color: 'orange_background',
+        },
+      },
+    ],
+  });
 }
 
 async function validateDB(dbId: string, name: string, requiredProps: string[]): Promise<void> {
