@@ -4,13 +4,14 @@ import type { TaskRepository } from '../src/core/ports/TaskRepository';
 import type { SummaryGenerator } from '../src/core/ports/SummaryGenerator';
 import type { StandupRepository } from '../src/core/ports/StandupRepository';
 import type { TaskSummary, StandupSummary } from '../src/core/domain/types';
+import { TaskStatus, TaskPriority } from '../src/core/domain/types';
 
 const mockTask: TaskSummary = {
   id: '1',
   title: 'Build auth module',
-  status: 'Done',
+  status: TaskStatus.DONE,
   dueDate: '2026-03-13',
-  priority: 'High',
+  priority: TaskPriority.HIGH,
   lastEdited: '2026-03-13T10:00:00Z',
   url: 'https://notion.so/1',
 };
@@ -24,6 +25,8 @@ const mockSummary: StandupSummary = {
 function makeMocks() {
   const tasks: TaskRepository = {
     fetchTasks: vi.fn().mockResolvedValue({ completed: [mockTask], active: [] }),
+    createTask: vi.fn().mockResolvedValue(mockTask),
+    updateTaskStatus: vi.fn().mockResolvedValue(undefined),
   };
   const summarizer: SummaryGenerator = {
     generateSummary: vi.fn().mockResolvedValue(mockSummary),
