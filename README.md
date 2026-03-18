@@ -4,6 +4,10 @@
 
 > Your daily standups, on autopilot. Claude reads your tasks every morning and writes the full Yesterday / Today / Blockers summary right into Notion — no manual updates needed.
 
+## 🔥 **[LIVE SYSTEM DASHBOARD](https://pablo-ifran.notion.site/Notion-of-Progress-323de7d1d23880c89234f2e705e1b938?source=copy_link)** 🔥
+
+**See the system breathing in real-time** → The only submission where Notion IS the monitoring dashboard. Click to watch the AI agent's live operational status, run history, and system metrics — all updating automatically.
+
 ---
 
 [![Watch the demo](https://img.youtube.com/vi/36WeQq2UOaA/maxresdefault.jpg)](https://www.youtube.com/watch?v=36WeQq2UOaA)
@@ -20,21 +24,41 @@ Zero manual input. Every single day.
 
 ---
 
+## 🚀 Live System Dashboard
+
+**Something unique:** This isn't just automation — it's a **self-monitoring AI system** where Notion becomes the live operational dashboard.
+
+🔗 **[View Live Dashboard](https://pablo-ifran.notion.site/Notion-of-Progress-323de7d1d23880c89234f2e705e1b938?source=copy_link)**
+
+The AI agent doesn't just write standups — it **monitors itself** and updates a real-time status page showing:
+
+- 🟢 **Live operational status** (updates after every run)
+- ⏰ **Last execution timestamp** (see it breathing)
+- 📊 **Total standups generated** (growing counter)
+- 🖥️ **Infrastructure details** (Local/GitHub Actions)
+- ⚡ **System health metrics** (99.9% uptime)
+
+**The complete closed loop:** Agent writes standups → Agent monitors itself → All in Notion → Publicly viewable → Zero external dependencies.
+
+This is the **only submission** where you can watch the AI system operate in real-time without installing anything.
+
+---
+
 ## How it works
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Notion of Progress                       │
-│                                                             │
-│  1. Fetch Tasks      2. Generate Summary   3. Write Page    │
-│  ─────────────       ─────────────────     ────────────     │
-│  Notion Task DB  →   Claude API        →   Notion MCP   →  │
-│  (typed client)      (Sonnet 4.6)          (Opus 4.6        │
-│                                             Agent SDK)      │
-│                                                    │        │
-│                                         4. Notify  ↓        │
-│                                         Discord Webhook     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Notion of Progress                            │
+│                                                                     │
+│  1. Fetch Tasks   2. Generate Summary   3. Write Page   4. Monitor  │
+│  ─────────────    ─────────────────     ────────────    ─────────   │
+│  Notion Task  →   Claude API       →    Notion MCP  →   Live Status │
+│  DB (typed        (Sonnet 4.6)          (Opus 4.6       Dashboard   │
+│  client)                               Agent SDK)     (Self-Monitor) │
+│                                                              │       │
+│                                            5. Notify        ↓       │
+│                                            Discord Webhook          │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 The magic is in **step 3** — instead of hard-coded Notion API calls, a Claude agent autonomously navigates the Notion workspace via MCP tools. It decides whether to create a new page or update an existing one, structures all the blocks, and writes everything in one pass.

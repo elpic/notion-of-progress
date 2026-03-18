@@ -26,6 +26,13 @@ import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
 import { Client } from '@notionhq/client';
 
+// Dashboard icons for status pages
+const DASHBOARD_ICONS = ['🚀', '💻', '⚡', '🔧', '📊', '🤖', '⚙️', '💡', '🎯', '🔥'] as const;
+
+function randomDashboardIcon(): string {
+  return DASHBOARD_ICONS[Math.floor(Math.random() * DASHBOARD_ICONS.length)];
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const ENV_PATH = join(ROOT, '.env');
@@ -133,6 +140,137 @@ async function createStandupLogDB(parentPageId: string): Promise<string> {
   return response.id;
 }
 
+async function createSystemStatusDB(parentPageId: string): Promise<string> {
+  console.log('  Creating System Status DB...');
+  const response = await notion.databases.create({
+    parent: { type: 'page_id', page_id: parentPageId },
+    title: [{ type: 'text', text: { content: 'System Status' } }],
+    properties: {
+      Title: { title: {} },
+      'Last Run': { date: {} },
+      Status: {
+        select: {
+          options: [
+            { name: 'Operational', color: 'green' },
+            { name: 'Degraded', color: 'yellow' },
+            { name: 'Down', color: 'red' },
+          ],
+        },
+      },
+      'Total Standups': { number: { format: 'number' } },
+      Environment: { rich_text: {} },
+    },
+  });
+  console.log(`  System Status DB created ✓`);
+  
+  // Create initial status page so users see the dashboard immediately
+  console.log('  Creating initial status page...');
+  await createInitialStatusPage(response.id);
+  console.log(`  Initial status page created ✓`);
+  
+  return response.id;
+}
+
+async function createInitialStatusPage(systemStatusDbId: string): Promise<void> {
+  const now = new Date();
+  const today = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  await notion.pages.create({
+    parent: { type: 'database_id', database_id: systemStatusDbId },
+    icon: { type: 'emoji', emoji: randomDashboardIcon() as never },
+    properties: {
+      Title: {
+        title: [{ type: 'text', text: { content: `🚀 System Dashboard - ${today}` } }],
+      },
+      'Last Run': {
+        date: { start: now.toISOString() },
+      },
+      Status: {
+        select: { name: 'Operational' },
+      },
+      'Total Standups': {
+        number: 0,
+      },
+      Environment: {
+        rich_text: [{ type: 'text', text: { content: 'Setup Complete' } }],
+      },
+    },
+    children: [
+      // Hero header
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '🤖 Notion of Progress AI Agent' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '🚀' },
+          color: 'blue_background',
+        },
+      },
+      {
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', text: { content: '🔥 LIVE SYSTEM DASHBOARD 🔥' }, annotations: { bold: true } }],
+        },
+      },
+      // Status
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '🟢 System Status: Ready for First Run' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '🟢' },
+          color: 'green_background',
+        },
+      },
+      // Setup message
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '📋 Setup completed successfully! Run your first standup to see live metrics.' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '✅' },
+          color: 'purple_background',
+        },
+      },
+      {
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [
+            { type: 'text', text: { content: '🚀 Next Steps: ' }, annotations: { bold: true } },
+            { type: 'text', text: { content: 'Run ' }, annotations: {} },
+            { type: 'text', text: { content: 'npm run standup' }, annotations: { code: true } },
+            { type: 'text', text: { content: ' to generate your first standup and see live operational metrics!' }, annotations: {} },
+          ],
+        },
+      },
+      {
+        type: 'divider',
+        divider: {},
+      },
+      // Public sharing hint
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '🌍 Make this page public: Page Settings → Share → Share to web → Anyone with link can view' }, annotations: {} }],
+          icon: { type: 'emoji', emoji: '🔗' },
+          color: 'blue_background',
+        },
+      },
+      // Footer
+      {
+        type: 'callout',
+        callout: {
+          rich_text: [{ type: 'text', text: { content: '✨ Built for the DEV.to Notion MCP Challenge 2026 ✨' }, annotations: { bold: true } }],
+          icon: { type: 'emoji', emoji: '🏆' },
+          color: 'orange_background',
+        },
+      },
+    ],
+  });
+}
+
 async function validateDB(dbId: string, name: string, requiredProps: string[]): Promise<void> {
   const db = await notion.databases.retrieve({ database_id: dbId });
   const props = Object.keys(db.properties);
@@ -146,56 +284,127 @@ async function main() {
 
   const existingTaskDbId = process.env.NOTION_TASK_DB_ID;
   const existingStandupDbId = process.env.NOTION_STANDUP_LOG_DB_ID;
+  const existingSystemStatusDbId = process.env.NOTION_SYSTEM_STATUS_DB_ID;
 
-  if (existingTaskDbId && existingStandupDbId) {
-    console.log('Database IDs found in .env — validating existing databases...\n');
+  // Validate existing databases
+  if (existingTaskDbId) {
+    console.log('Validating Task DB...');
     await validateDB(existingTaskDbId, 'Task DB', ['Name', 'Status', 'Priority', 'Due Date']);
+  }
+  
+  if (existingStandupDbId) {
+    console.log('Validating Standup Log...');
     await validateDB(existingStandupDbId, 'Standup Log', ['Title', 'Date', 'Status', 'Tasks Reviewed']);
-    console.log('\n✅ All good! Run npm run standup to generate your first standup.\n');
+  }
+  
+  if (existingSystemStatusDbId) {
+    console.log('Validating System Status...');
+    await validateDB(existingSystemStatusDbId, 'System Status', ['Title', 'Last Run', 'Status', 'Total Standups']);
+  }
+  
+  // Check what needs to be created
+  const needsTask = !existingTaskDbId;
+  const needsStandup = !existingStandupDbId;
+  const needsStatus = !existingSystemStatusDbId;
+  
+  if (!needsTask && !needsStandup && !needsStatus) {
+    console.log('\n✅ All databases exist and are valid! Run npm run standup to generate your first standup.\n');
     return;
   }
 
-  console.log('No database IDs found — creating databases from scratch.\n');
-  console.log('Before continuing, make sure you have:');
-  console.log('  1. Created an empty page in Notion (e.g. "Notion of Progress")');
-  console.log('  2. Connected your integration to it: ··· → Connections → <your integration>\n');
+  // Show what needs to be created
+  console.log('\n🚀 Creating missing databases:');
+  if (needsTask) console.log('  • Task DB — Your daily tasks and projects');
+  if (needsStandup) console.log('  • Standup Log — Generated standup summaries');
+  if (needsStatus) console.log('  • System Status — Live monitoring dashboard');
+  console.log('');
 
-  const pageUrl = await prompt('Paste the URL of that Notion page: ');
+  // Get parent page (either from existing setup or user input)
   let parentPageId: string;
+  
+  if (existingTaskDbId) {
+    // If we have an existing Task DB, get its parent page
+    try {
+      const taskDb = await notion.databases.retrieve({ database_id: existingTaskDbId }) as any;
+      parentPageId = taskDb.parent?.type === 'page_id' ? taskDb.parent.page_id : '';
+      if (!parentPageId) throw new Error('Could not find parent page from existing Task DB');
+      console.log('Using parent page from existing Task DB ✓\n');
+    } catch {
+      console.error('❌ Could not find parent page from existing databases. Please provide the page URL.');
+      const pageUrl = await prompt('Paste the URL of your Notion parent page: ');
+      parentPageId = extractPageId(pageUrl);
+    }
+  } else {
+    // New setup - ask for parent page
+    console.log('Before continuing, make sure you have:');
+    console.log('  1. Created an empty page in Notion (e.g. "Notion of Progress")');
+    console.log('  2. Connected your integration to it: ··· → Connections → <your integration>\n');
 
-  try {
-    parentPageId = extractPageId(pageUrl);
-  } catch (e) {
-    console.error(`\n❌ ${(e as Error).message}`);
-    process.exit(1);
+    const pageUrl = await prompt('Paste the URL of that Notion page: ');
+    try {
+      parentPageId = extractPageId(pageUrl);
+    } catch (e) {
+      console.error(`\n❌ ${(e as Error).message}`);
+      process.exit(1);
+    }
   }
 
   // Verify we can access the page
   try {
     await notion.pages.retrieve({ page_id: parentPageId });
-    console.log('\n  Page found ✓\n');
+    console.log('  Page found ✓\n');
   } catch {
     console.error('\n❌ Could not access that page. Make sure you connected your integration to it.\n');
     process.exit(1);
   }
 
-  const taskDbId = await createTaskDB(parentPageId);
-  const standupLogDbId = await createStandupLogDB(parentPageId);
+  // Create only missing databases
+  let taskDbId: string = existingTaskDbId || '';
+  let standupLogDbId: string = existingStandupDbId || '';
+  let systemStatusDbId: string = existingSystemStatusDbId || '';
 
+  if (needsTask) {
+    taskDbId = await createTaskDB(parentPageId);
+  }
+  
+  if (needsStandup) {
+    standupLogDbId = await createStandupLogDB(parentPageId);
+  }
+  
+  if (needsStatus) {
+    systemStatusDbId = await createSystemStatusDB(parentPageId);
+  }
+
+  // Update .env with any new IDs
   console.log('\n  Writing DB IDs to .env...');
-  updateEnv('NOTION_TASK_DB_ID', taskDbId);
-  updateEnv('NOTION_STANDUP_LOG_DB_ID', standupLogDbId);
+  if (needsTask) updateEnv('NOTION_TASK_DB_ID', taskDbId);
+  if (needsStandup) updateEnv('NOTION_STANDUP_LOG_DB_ID', standupLogDbId);
+  if (needsStatus) updateEnv('NOTION_SYSTEM_STATUS_DB_ID', systemStatusDbId);
 
-  console.log(`
-✅ Setup complete!
+  console.log('\n✅ Setup complete!');
+  console.log('\n  Database URLs:');
+  
+  if (taskDbId) {
+    console.log(`  Task DB:        https://www.notion.so/${taskDbId.replace(/-/g, '')}`);
+  }
+  if (standupLogDbId) {
+    console.log(`  Standup Log:    https://www.notion.so/${standupLogDbId.replace(/-/g, '')}`);
+  }
+  if (systemStatusDbId) {
+    console.log(`  System Status:  https://www.notion.so/${systemStatusDbId.replace(/-/g, '')}`);
+  }
 
-  Task DB:      https://www.notion.so/${taskDbId.replace(/-/g, '')}
-  Standup Log:  https://www.notion.so/${standupLogDbId.replace(/-/g, '')}
+  if (needsStatus) {
+    console.log('\n  📊 The System Status page will show your system\'s live operational status!');
+    console.log('\n  💡 TIP: Make your System Status page public for judges to see:');
+    console.log('      1. Open the System Status page in Notion');
+    console.log('      2. Click "Share" → "Share to web" → "Anyone with link can view"');
+    console.log('      3. Copy the public URL and add it to your README!');
+  }
 
-  DB IDs have been saved to your .env automatically.
-
-  Run: npm run standup
-`);
+  console.log('\n  DB IDs have been saved to your .env automatically.');
+  console.log('\n  Run: npm run standup');
+  console.log('');
 }
 
 main().catch((err) => {
