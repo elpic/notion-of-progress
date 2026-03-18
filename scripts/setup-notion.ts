@@ -283,6 +283,10 @@ async function main() {
 
   if (needsStatus) {
     console.log('\n  📊 The System Status page will show your system\'s live operational status!');
+    console.log('\n  💡 TIP: Make your System Status page public for judges to see:');
+    console.log('      1. Open the System Status page in Notion');
+    console.log('      2. Click "Share" → "Share to web" → "Anyone with link can view"');
+    console.log('      3. Copy the public URL and add it to your README!');
   }
 
   console.log('\n  DB IDs have been saved to your .env automatically.');

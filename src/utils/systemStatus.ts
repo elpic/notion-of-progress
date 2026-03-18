@@ -176,6 +176,15 @@ async function createStatusPage(data: StatusPageData): Promise<string> {
     children: buildStatusBlocks(data),
   });
 
+  // Try to make the page publicly shareable (this may require manual setup)
+  try {
+    // Note: The Notion API doesn't currently support programmatic public sharing
+    // This would need to be done manually in the Notion UI
+    // We'll add instructions for users to do this
+  } catch (error) {
+    // Silently fail - public sharing is optional
+  }
+
   return response.id;
 }
 
@@ -371,6 +380,18 @@ function buildStatusBlocks(data: StatusPageData): BlockRequest[] {
     {
       type: 'divider',
       divider: {},
+    } as BlockRequest,
+
+    // Public sharing hint
+    {
+      type: 'callout',
+      callout: {
+        rich_text: [
+          richText('🌍 Make this page public: Page Settings → Share → Share to web → Anyone with link can view'),
+        ],
+        icon: { type: 'emoji', emoji: '🔗' } as { type: 'emoji'; emoji: never },
+        color: 'blue_background',
+      },
     } as BlockRequest,
 
     // Footer with branding
