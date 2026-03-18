@@ -67,7 +67,6 @@ jobs:
           NOTION_SYSTEM_STATUS_DB_ID: ${{ secrets.NOTION_SYSTEM_STATUS_DB_ID }}
           
           # Optional environment variables with defaults
-          DIGEST_CRON_SCHEDULE: '0 17 * * 5'
           TZ: 'America/New_York'
           
           # Optional integrations

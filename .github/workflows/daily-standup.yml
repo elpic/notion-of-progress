@@ -57,7 +57,6 @@ jobs:
           NOTION_SYSTEM_STATUS_DB_ID: ${{ secrets.NOTION_SYSTEM_STATUS_DB_ID }}
           
           # Optional environment variables with defaults
-          CRON_SCHEDULE: '0 8 * * 1-5'
           TZ: 'America/New_York'
           TASK_STATUS_PROPERTY: 'Status'
           TASK_DONE_VALUE: 'Done'
