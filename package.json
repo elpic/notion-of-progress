@@ -7,7 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "standup": "tsx scripts/run-mcp.ts",
-    "setup": "tsx scripts/setup-notion.ts",
+    "digest": "tsx scripts/run-digest.ts",
+    "setup": "tsx scripts/setup.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
