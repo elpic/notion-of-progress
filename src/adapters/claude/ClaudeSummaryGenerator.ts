@@ -3,7 +3,7 @@ import type { SummaryGenerator } from '../../core/ports/SummaryGenerator';
 import type { TaskSummary, StandupSummary, StandupBullet } from '../../core/domain/types';
 import { config } from '../../config/index';
 import { todayISO, yesterdayISO } from '../../utils/dateHelpers';
-import { withRetry } from '../../utils/retry';
+import { withRetry, isAnthropicOverloaded } from '../../utils/retry';
 
 const SYSTEM_PROMPT = `You are a technical standup assistant. Given a list of Notion tasks, produce a concise standup summary.
 
@@ -120,7 +120,7 @@ Generate the standup summary JSON.`;
         messages: [{ role: 'user', content: userPrompt }],
         system: SYSTEM_PROMPT,
       }),
-      { attempts: 2, delayMs: 2000 }
+      { attempts: 4, delayMs: 5000, shouldRetry: isAnthropicOverloaded }
     );
 
     const content = message.content[0];
