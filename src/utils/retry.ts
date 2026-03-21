@@ -35,3 +35,12 @@ export function isNotionRateLimit(err: unknown): boolean {
     (err as { code: string }).code === 'rate_limited'
   );
 }
+
+export function isAnthropicOverloaded(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'status' in err &&
+    (err as { status: number }).status === 529
+  );
+}
