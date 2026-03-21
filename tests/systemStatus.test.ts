@@ -5,7 +5,7 @@
  * the operational dashboard in Notion.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock all dependencies
 const mockNotionClient = {
@@ -55,8 +55,14 @@ vi.mock('../src/utils/icons', () => ({
 
 describe('System Status Management', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-18T00:00:00Z'));
     vi.clearAllMocks();
     mockConfig.notion.systemStatusDbId = 'test-status-db-id';
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('updateSystemStatus', () => {
