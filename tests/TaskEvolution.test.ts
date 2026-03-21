@@ -214,7 +214,11 @@ describe('TaskEvolution - Basic Tests', () => {
 
   describe('task generation patterns', () => {
     it('should not create duplicate tasks in same evolution cycle', async () => {
-      // Arrange
+      // Arrange — seed Math.random so task selection and name personalisation are deterministic
+      let callCount = 0;
+      const values = [0.9, 0.1, 0, 0.5, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9];
+      vi.spyOn(Math, 'random').mockImplementation(() => values[callCount++ % values.length]);
+
       const repo = createMockRepository();
       repo.fetchTasks.mockResolvedValue({
         completed: [],
@@ -236,6 +240,8 @@ describe('TaskEvolution - Basic Tests', () => {
       const taskTitles = createdTasks.map(t => t.title);
       const uniqueTitles = [...new Set(taskTitles)];
       expect(taskTitles.length).toBe(uniqueTitles.length); // No duplicates
+
+      vi.restoreAllMocks();
     });
 
     it('should generate tasks with appropriate priorities', async () => {
