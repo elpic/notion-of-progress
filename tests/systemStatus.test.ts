@@ -65,6 +65,7 @@ describe('System Status Management', () => {
     vi.useRealTimers();
   });
 
+
   describe('updateSystemStatus', () => {
     it('should skip when system status database is not configured', async () => {
       // Arrange
